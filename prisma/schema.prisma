@@ -1,0 +1,385 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 사용자 관리
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String
+  avatar_url    String?
+  role          Role
+  department    String?
+  hourly_rate   Float?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  // Relations
+  organization_members OrganizationMember[]
+  project_members     ProjectMember[]
+  assigned_tasks      Task[]           @relation("TaskAssignee")
+  reported_tasks      Task[]           @relation("TaskReporter")
+  time_logs          TimeLog[]
+  comments           Comment[]
+  attachments        Attachment[]
+  notifications      Notification[]
+  created_expenses   ProjectExpense[]
+
+  @@map("users")
+}
+
+enum Role {
+  PMO
+  PM
+  PL
+  DEVELOPER
+  DESIGNER
+  CONSULTANT
+}
+
+// 회사/조직 관리
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  created_at  DateTime @default(now())
+
+  // Relations
+  members  OrganizationMember[]
+  clients  Client[]
+  projects Project[]
+
+  @@map("organizations")
+}
+
+// 조직 멤버십
+model OrganizationMember {
+  id              String       @id @default(cuid())
+  organization_id String
+  user_id         String
+  role            String       @default("MEMBER")
+  joined_at       DateTime     @default(now())
+
+  // Relations
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, user_id])
+  @@map("organization_members")
+}
+
+// 고객사 관리
+model Client {
+  id              String       @id @default(cuid())
+  organization_id String
+  name            String
+  company_type    String?
+  industry        String?
+  contact_person  String?
+  email           String?
+  phone           String?
+  address         String?
+  website         String?
+  notes           String?
+  status          ClientStatus @default(ACTIVE)
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  projects     Project[]
+
+  @@unique([organization_id, name])
+  @@map("clients")
+}
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+  PROSPECT
+}
+
+// 프로젝트 관리
+model Project {
+  id               String        @id @default(cuid())
+  organization_id  String
+  client_id        String
+  name             String
+  description      String?
+  project_type     ProjectType?
+  status           ProjectStatus @default(PLANNING)
+  priority         Priority      @default(MEDIUM)
+  
+  // 일정 관리
+  start_date       DateTime?
+  end_date         DateTime?
+  estimated_hours  Int?
+  actual_hours     Int           @default(0)
+  
+  // 예산 관리
+  budget_amount    Float?
+  contract_amount  Float?
+  actual_cost      Float       @default(0)
+  currency         String        @default("KRW")
+  
+  // 진행률
+  progress         Int           @default(0)
+  
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+
+  // Relations
+  organization Organization     @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  client       Client          @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  members      ProjectMember[]
+  phases       ProjectPhase[]
+  tasks        Task[]
+  time_logs    TimeLog[]
+  expenses     ProjectExpense[]
+  comments     Comment[]
+  attachments  Attachment[]
+
+  @@map("projects")
+}
+
+enum ProjectType {
+  WEB
+  MOBILE
+  SYSTEM
+  CONSULTING
+  MAINTENANCE
+}
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// 프로젝트 팀원 배정
+model ProjectMember {
+  id                    String   @id @default(cuid())
+  project_id            String
+  user_id               String
+  role                  Role
+  allocation_percentage Int      @default(100)
+  hourly_rate           Float?
+  joined_at             DateTime @default(now())
+  left_at               DateTime?
+
+  // Relations
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, user_id, role])
+  @@map("project_members")
+}
+
+// 프로젝트 단계/마일스톤
+model ProjectPhase {
+  id          String      @id @default(cuid())
+  project_id  String
+  name        String
+  description String?
+  start_date  DateTime?
+  end_date    DateTime?
+  status      PhaseStatus @default(PENDING)
+  order_index Int
+  created_at  DateTime    @default(now())
+
+  // Relations
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@map("project_phases")
+}
+
+enum PhaseStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  DELAYED
+}
+
+// 작업 관리
+model Task {
+  id              String     @id @default(cuid())
+  project_id      String
+  phase_id        String?
+  parent_task_id  String?
+  title           String
+  description     String?
+  status          TaskStatus @default(TODO)
+  priority        Priority   @default(MEDIUM)
+  assignee_id     String?
+  reporter_id     String?
+  start_date      DateTime?
+  due_date        DateTime?
+  estimated_hours Float?
+  actual_hours    Float    @default(0)
+  progress        Int        @default(0)
+  created_at      DateTime   @default(now())
+  updated_at      DateTime   @updatedAt
+
+  // Relations
+  project         Project           @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  phase           ProjectPhase?     @relation(fields: [phase_id], references: [id], onDelete: SetNull)
+  parent_task     Task?             @relation("TaskHierarchy", fields: [parent_task_id], references: [id], onDelete: Cascade)
+  sub_tasks       Task[]            @relation("TaskHierarchy")
+  assignee        User?             @relation("TaskAssignee", fields: [assignee_id], references: [id])
+  reporter        User?             @relation("TaskReporter", fields: [reporter_id], references: [id])
+  predecessors    TaskDependency[]  @relation("PredecessorTask")
+  successors      TaskDependency[]  @relation("SuccessorTask")
+  time_logs       TimeLog[]
+  comments        Comment[]
+  attachments     Attachment[]
+
+  @@map("tasks")
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+  BLOCKED
+}
+
+// 작업 의존성
+model TaskDependency {
+  id              String         @id @default(cuid())
+  predecessor_id  String
+  successor_id    String
+  dependency_type DependencyType @default(FINISH_TO_START)
+  lag_days        Int            @default(0)
+
+  // Relations
+  predecessor Task @relation("PredecessorTask", fields: [predecessor_id], references: [id], onDelete: Cascade)
+  successor   Task @relation("SuccessorTask", fields: [successor_id], references: [id], onDelete: Cascade)
+
+  @@unique([predecessor_id, successor_id])
+  @@map("task_dependencies")
+}
+
+enum DependencyType {
+  FINISH_TO_START
+  START_TO_START
+  FINISH_TO_FINISH
+  START_TO_FINISH
+}
+
+// 시간 로그
+model TimeLog {
+  id          String   @id @default(cuid())
+  project_id  String
+  task_id     String?
+  user_id     String
+  description String?
+  hours       Float
+  log_date    DateTime
+  hourly_rate Float?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  task    Task?   @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("time_logs")
+}
+
+// 프로젝트 비용
+model ProjectExpense {
+  id           String   @id @default(cuid())
+  project_id   String
+  category     String
+  description  String
+  amount       Float
+  expense_date DateTime
+  receipt_url  String?
+  created_by   String?
+  created_at   DateTime @default(now())
+
+  // Relations
+  project    Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  created_by_user User? @relation(fields: [created_by], references: [id])
+
+  @@map("project_expenses")
+}
+
+// 댓글 시스템
+model Comment {
+  id                String   @id @default(cuid())
+  project_id        String?
+  task_id           String?
+  user_id           String
+  content           String
+  parent_comment_id String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relations
+  project        Project?  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  task           Task?     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user           User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  parent_comment Comment?  @relation("CommentReplies", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  replies        Comment[] @relation("CommentReplies")
+
+  @@map("comments")
+}
+
+// 파일 첨부
+model Attachment {
+  id         String   @id @default(cuid())
+  project_id String?
+  task_id    String?
+  user_id    String
+  filename   String
+  file_path  String
+  file_size  BigInt?
+  mime_type  String?
+  created_at DateTime @default(now())
+
+  // Relations
+  project Project? @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  task    Task?    @relation(fields: [task_id], references: [id], onDelete: SetNull)
+  user    User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}
+
+// 알림 시스템
+model Notification {
+  id         String    @id @default(cuid())
+  user_id    String
+  type       String
+  title      String
+  message    String
+  data       Json?
+  read_at    DateTime?
+  created_at DateTime  @default(now())
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
