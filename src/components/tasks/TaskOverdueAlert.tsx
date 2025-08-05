@@ -9,12 +9,14 @@ interface TaskOverdueAlertProps {
   overdueTasks: TaskListItem[];
   onTaskUpdate: (taskId: string, updates: Partial<TaskListItem>) => Promise<void>;
   onTaskClick: (task: TaskListItem) => void;
+  onTaskEdit?: (task: TaskListItem) => void;
 }
 
 export default function TaskOverdueAlert({
   overdueTasks,
   onTaskUpdate,
   onTaskClick,
+  onTaskEdit,
 }: TaskOverdueAlertProps) {
   if (overdueTasks.length === 0) {
     return null;
@@ -59,6 +61,16 @@ export default function TaskOverdueAlert({
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 ml-4">
+                  {onTaskEdit && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onTaskEdit(task)}
+                      className="text-xs px-2 py-1 h-6"
+                    >
+                      수정
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"

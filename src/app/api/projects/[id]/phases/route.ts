@@ -20,13 +20,26 @@ export async function GET(
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        organization: {
-          members: {
-            some: {
-              user_id: session.user.id
+        OR: [
+          // 프로젝트 멤버인 경우
+          {
+            members: {
+              some: {
+                user_id: session.user.id
+              }
+            }
+          },
+          // 조직 멤버인 경우
+          {
+            organization: {
+              members: {
+                some: {
+                  user_id: session.user.id
+                }
+              }
             }
           }
-        }
+        ]
       }
     });
 
@@ -100,16 +113,34 @@ export async function POST(
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        organization: {
-          members: {
-            some: {
-              user_id: session.user.id,
-              role: {
-                in: ['PMO', 'PM', 'PL']
+        OR: [
+          // 프로젝트 멤버로서 PMO, PM, PL 역할을 가진 경우
+          {
+            members: {
+              some: {
+                user_id: session.user.id,
+                role: {
+                  in: ['PMO', 'PM', 'PL']
+                }
+              }
+            }
+          },
+          // 조직 멤버로서 PMO, PM 역할을 가진 경우 (전체 프로젝트 관리 권한)
+          {
+            organization: {
+              members: {
+                some: {
+                  user_id: session.user.id,
+                  user: {
+                    role: {
+                      in: ['PMO', 'PM']
+                    }
+                  }
+                }
               }
             }
           }
-        }
+        ]
       }
     });
 

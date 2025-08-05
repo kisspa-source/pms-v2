@@ -11,6 +11,7 @@ interface TaskCardProps {
   task: TaskListItem;
   onClick: () => void;
   onUpdate: (taskId: string, updates: Partial<TaskListItem>) => Promise<void>;
+  onEdit?: () => void;
   isDragging?: boolean;
 }
 
@@ -18,6 +19,7 @@ export default function TaskCard({
   task,
   onClick,
   onUpdate,
+  onEdit,
   isDragging = false,
 }: TaskCardProps) {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -96,10 +98,25 @@ export default function TaskCard({
         onClick={onClick}
       >
         {/* 작업 제목 */}
-        <div className="mb-2">
-          <h4 className="font-medium text-gray-900 text-sm line-clamp-2">
+        <div className="mb-2 flex items-start justify-between">
+          <h4 className="font-medium text-gray-900 text-sm line-clamp-2 flex-1">
             {task.title}
           </h4>
+          {onEdit && !isDragging && !isSortableDragging && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="p-1 h-6 w-6 text-gray-400 hover:text-gray-600 ml-2"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </Button>
+          )}
         </div>
 
         {/* 작업 메타 정보 */}

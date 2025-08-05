@@ -243,8 +243,8 @@ export default function OrganizationsPage() {
                           <p className="text-sm text-gray-600 mt-1">{organization.description}</p>
                         )}
                         <div className="flex gap-4 mt-2 text-sm text-gray-500">
-                          <span>사용자: {organization._count.users}명</span>
-                          <span>프로젝트: {organization._count.projects}개</span>
+                          <span>사용자: {organization._count?.users || 0}명</span>
+                          <span>프로젝트: {organization._count?.projects || 0}개</span>
                           {organization.email && <span>이메일: {organization.email}</span>}
                           {organization.phone && <span>전화: {organization.phone}</span>}
                         </div>
@@ -257,7 +257,7 @@ export default function OrganizationsPage() {
                           variant="destructive" 
                           size="sm" 
                           onClick={() => handleDeleteOrganization(organization.id)}
-                          disabled={organization._count.users > 0 || organization._count.projects > 0}
+                          disabled={(organization._count?.users || 0) > 0 || (organization._count?.projects || 0) > 0}
                         >
                           삭제
                         </Button>

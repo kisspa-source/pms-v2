@@ -26,30 +26,34 @@ export async function GET(
     const organization = await prisma.organization.findUnique({
       where: { id: organizationId },
       include: {
-        users: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            createdAt: true,
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                created_at: true,
+              }
+            }
           },
-          orderBy: { createdAt: 'desc' }
+          orderBy: { joined_at: 'desc' }
         },
         projects: {
           select: {
             id: true,
             name: true,
             status: true,
-            startDate: true,
-            endDate: true,
-            createdAt: true,
+            start_date: true,
+            end_date: true,
+            created_at: true,
           },
-          orderBy: { createdAt: 'desc' }
+          orderBy: { created_at: 'desc' }
         },
         _count: {
           select: {
-            users: true,
+            members: true,
             projects: true,
           }
         }
@@ -135,14 +139,30 @@ export async function PUT(
       include: {
         _count: {
           select: {
-            users: true,
+            members: true,
             projects: true,
           }
         }
       }
     })
 
-    return NextResponse.json(updatedOrganization)
+    return NextResponse.json({
+      id: updatedOrganization.id,
+      name: updatedOrganization.name,
+      description: updatedOrganization.description,
+      address: updatedOrganization.address,
+      phone: updatedOrganization.phone,
+      email: updatedOrganization.email,
+      website: updatedOrganization.website,
+      createdAt: updatedOrganization.created_at.toISOString(),
+      updatedAt: updatedOrganization.updated_at.toISOString(),
+      _count: {
+        users: updatedOrganization._count.members,
+        projects: updatedOrganization._count.projects,
+      }
+    })
+
+
 
   } catch (error) {
     console.error('조직 수정 오류:', error)
@@ -178,7 +198,7 @@ export async function DELETE(
       include: {
         _count: {
           select: {
-            users: true,
+            members: true,
             projects: true,
           }
         }
@@ -193,7 +213,7 @@ export async function DELETE(
     }
 
     // 조직에 속한 사용자나 프로젝트가 있는지 확인
-    if (existingOrganization._count.users > 0 || existingOrganization._count.projects > 0) {
+    if (existingOrganization._count.members > 0 || existingOrganization._count.projects > 0) {
       return NextResponse.json(
         { error: '사용자나 프로젝트가 속한 조직은 삭제할 수 없습니다.' },
         { status: 400 }

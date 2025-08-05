@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, FileText, Calendar, DollarSign, Target, AlertCircle, Building2, Users, Settings, BarChart3, Edit } from 'lucide-react'
+import Link from 'next/link'
 import { toast } from 'sonner'
+import MainLayout from '@/components/layout/MainLayout'
 
 interface Project {
   id: string
@@ -144,200 +146,409 @@ export default function EditProjectPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">로딩 중...</div>
+      <MainLayout>
+        <div className="container mx-auto p-6">
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                <FileText className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">프로젝트 정보를 불러오는 중...</h3>
+              <p className="text-gray-600">잠시만 기다려주세요</p>
+            </div>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     )
   }
 
   if (!project) {
     return (
-      <div className="container mx-auto py-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">프로젝트를 찾을 수 없습니다.</div>
+      <MainLayout>
+        <div className="container mx-auto p-6">
+          <div className="text-center py-20">
+            <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle className="w-12 h-12 text-red-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-3">프로젝트를 찾을 수 없습니다</h2>
+            <p className="text-gray-600 mb-8 text-lg">요청하신 프로젝트가 존재하지 않거나 접근 권한이 없습니다.</p>
+            <Link href="/projects">
+              <Button className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large h-12 px-8">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                프로젝트 목록으로 돌아가기
+              </Button>
+            </Link>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     )
   }
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          뒤로가기
-        </Button>
-        <h1 className="text-2xl font-bold">프로젝트 수정</h1>
+    <MainLayout>
+      <div className="container mx-auto p-6">
+      {/* 헤더 */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 shadow-soft border border-blue-100">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.back()}
+            className="hover-lift"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            뒤로가기
+          </Button>
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">프로젝트 수정 ✏️</h1>
+            <p className="text-gray-600 text-lg">프로젝트 정보를 수정하여 더 나은 관리를 시작하세요</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <Edit className="w-4 h-4" />
+          <span>프로젝트 정보 편집</span>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>프로젝트 정보</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="name">프로젝트명 *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  required
-                />
-              </div>
+      {/* 진행 단계 표시 */}
+      <div className="mb-8">
+        <div className="flex items-center justify-center space-x-4 mb-6">
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
+              1
+            </div>
+            <span className="ml-2 text-sm font-medium text-blue-600">기본 정보</span>
+          </div>
+          <div className="w-16 h-1 bg-blue-200 rounded"></div>
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
+              2
+            </div>
+            <span className="ml-2 text-sm font-medium text-blue-600">일정 & 예산</span>
+          </div>
+          <div className="w-16 h-1 bg-blue-200 rounded"></div>
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
+              3
+            </div>
+            <span className="ml-2 text-sm font-medium text-blue-600">저장</span>
+          </div>
+        </div>
+      </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="client_id">고객사 *</Label>
-                <select
-                  id="client_id"
-                  value={formData.client_id}
-                  onChange={(e) => handleInputChange('client_id', e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  required
-                >
-                  <option value="">고객사를 선택하세요</option>
-                  {clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* 기본 정보 */}
+          <div className="lg:col-span-2">
+            <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-medium hover:shadow-large">
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 bg-blue-600 rounded-lg">
+                    <FileText className="w-5 h-5 text-white" />
+                  </div>
+                  기본 정보
+                </CardTitle>
+                <p className="text-gray-600 text-sm mt-2">프로젝트의 기본적인 정보를 수정해주세요</p>
+              </CardHeader>
+              <CardContent className="space-y-6 p-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <Target className="w-4 h-4 text-blue-600" />
+                    프로젝트명 *
+                  </Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="예: 웹사이트 리뉴얼 프로젝트"
+                    required
+                    className="input-modern h-12"
+                  />
+                  <p className="text-xs text-gray-500">명확하고 구체적인 프로젝트명을 입력해주세요</p>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="project_type">프로젝트 유형</Label>
-                <select
-                  id="project_type"
-                  value={formData.project_type}
-                  onChange={(e) => handleInputChange('project_type', e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="">프로젝트 유형을 선택하세요</option>
-                  <option value="WEB">웹</option>
-                  <option value="MOBILE">모바일</option>
-                  <option value="SYSTEM">시스템</option>
-                  <option value="CONSULTING">컨설팅</option>
-                  <option value="MAINTENANCE">유지보수</option>
-                </select>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <FileText className="w-4 h-4 text-blue-600" />
+                    프로젝트 설명
+                  </Label>
+                  <textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    placeholder="프로젝트의 목표, 범위, 주요 기능 등을 상세히 설명해주세요..."
+                    rows={4}
+                    className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                  />
+                  <p className="text-xs text-gray-500">프로젝트의 목적과 범위를 명확히 기술해주세요</p>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="status">상태</Label>
-                <select
-                  id="status"
-                  value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="">상태를 선택하세요</option>
-                  <option value="PLANNING">계획</option>
-                  <option value="IN_PROGRESS">진행중</option>
-                  <option value="ON_HOLD">보류</option>
-                  <option value="COMPLETED">완료</option>
-                  <option value="CANCELLED">취소</option>
-                </select>
-              </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="client_id" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <Users className="w-4 h-4 text-blue-600" />
+                      고객사 *
+                    </Label>
+                    <select
+                      id="client_id"
+                      value={formData.client_id}
+                      onChange={(e) => handleInputChange('client_id', e.target.value)}
+                      required
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                    >
+                      <option value="">고객사를 선택하세요</option>
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                          {client.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500">프로젝트를 의뢰한 고객사를 선택해주세요</p>
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="priority">우선순위</Label>
-                <select
-                  id="priority"
-                  value={formData.priority}
-                  onChange={(e) => handleInputChange('priority', e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="">우선순위를 선택하세요</option>
-                  <option value="LOW">낮음</option>
-                  <option value="MEDIUM">보통</option>
-                  <option value="HIGH">높음</option>
-                  <option value="CRITICAL">긴급</option>
-                </select>
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="project_type" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <Settings className="w-4 h-4 text-blue-600" />
+                      프로젝트 타입
+                    </Label>
+                    <select
+                      id="project_type"
+                      value={formData.project_type}
+                      onChange={(e) => handleInputChange('project_type', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                    >
+                      <option value="">프로젝트 타입을 선택하세요</option>
+                      <option value="WEB">웹 개발</option>
+                      <option value="MOBILE">모바일 앱</option>
+                      <option value="SYSTEM">시스템 개발</option>
+                      <option value="CONSULTING">컨설팅</option>
+                      <option value="MAINTENANCE">유지보수</option>
+                    </select>
+                    <p className="text-xs text-gray-500">프로젝트의 성격에 맞는 타입을 선택해주세요</p>
+                  </div>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="estimated_hours">예상 시간 (시간)</Label>
-                <Input
-                  id="estimated_hours"
-                  type="number"
-                  value={formData.estimated_hours}
-                  onChange={(e) => handleInputChange('estimated_hours', e.target.value)}
-                />
-              </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="status" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <BarChart3 className="w-4 h-4 text-blue-600" />
+                      프로젝트 상태
+                    </Label>
+                    <select
+                      id="status"
+                      value={formData.status}
+                      onChange={(e) => handleInputChange('status', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                    >
+                      <option value="">상태를 선택하세요</option>
+                      <option value="PLANNING">계획</option>
+                      <option value="IN_PROGRESS">진행중</option>
+                      <option value="ON_HOLD">보류</option>
+                      <option value="COMPLETED">완료</option>
+                      <option value="CANCELLED">취소</option>
+                    </select>
+                    <p className="text-xs text-gray-500">현재 프로젝트의 진행 상태를 선택해주세요</p>
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="start_date">시작일</Label>
-                <Input
-                  id="start_date"
-                  type="date"
-                  value={formData.start_date}
-                  onChange={(e) => handleInputChange('start_date', e.target.value)}
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="priority" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <AlertCircle className="w-4 h-4 text-blue-600" />
+                      우선순위
+                    </Label>
+                    <select
+                      id="priority"
+                      value={formData.priority}
+                      onChange={(e) => handleInputChange('priority', e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                    >
+                      <option value="">우선순위를 선택하세요</option>
+                      <option value="LOW">낮음</option>
+                      <option value="MEDIUM">보통</option>
+                      <option value="HIGH">높음</option>
+                      <option value="CRITICAL">긴급</option>
+                    </select>
+                    <p className="text-xs text-gray-500">프로젝트의 중요도를 설정해주세요</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="end_date">종료일</Label>
-                <Input
-                  id="end_date"
-                  type="date"
-                  value={formData.end_date}
-                  onChange={(e) => handleInputChange('end_date', e.target.value)}
-                />
-              </div>
+          {/* 일정 및 예산 */}
+          <div className="space-y-6">
+            <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-medium hover:shadow-large">
+              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 bg-green-600 rounded-lg">
+                    <Calendar className="w-5 h-5 text-white" />
+                  </div>
+                  일정 관리
+                </CardTitle>
+                <p className="text-gray-600 text-sm mt-2">프로젝트 일정을 설정해주세요</p>
+              </CardHeader>
+              <CardContent className="space-y-4 p-6">
+                <div className="space-y-2">
+                  <Label htmlFor="start_date" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <Calendar className="w-4 h-4 text-green-600" />
+                    시작일
+                  </Label>
+                  <Input
+                    id="start_date"
+                    type="date"
+                    value={formData.start_date}
+                    onChange={(e) => handleInputChange('start_date', e.target.value)}
+                    className="input-modern h-12"
+                  />
+                  <p className="text-xs text-gray-500">프로젝트 시작 예정일을 선택해주세요</p>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="budget_amount">예산 (원)</Label>
-                <Input
-                  id="budget_amount"
-                  type="number"
-                  value={formData.budget_amount}
-                  onChange={(e) => handleInputChange('budget_amount', e.target.value)}
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end_date" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <Calendar className="w-4 h-4 text-green-600" />
+                    종료일
+                  </Label>
+                  <Input
+                    id="end_date"
+                    type="date"
+                    value={formData.end_date}
+                    onChange={(e) => handleInputChange('end_date', e.target.value)}
+                    className="input-modern h-12"
+                  />
+                  <p className="text-xs text-gray-500">프로젝트 완료 목표일을 선택해주세요</p>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="contract_amount">계약금액 (원)</Label>
-                <Input
-                  id="contract_amount"
-                  type="number"
-                  value={formData.contract_amount}
-                  onChange={(e) => handleInputChange('contract_amount', e.target.value)}
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="estimated_hours" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <Target className="w-4 h-4 text-green-600" />
+                    예상 시간 (시간)
+                  </Label>
+                  <Input
+                    id="estimated_hours"
+                    type="number"
+                    value={formData.estimated_hours}
+                    onChange={(e) => handleInputChange('estimated_hours', e.target.value)}
+                    placeholder="예: 160"
+                    className="input-modern h-12"
+                  />
+                  <p className="text-xs text-gray-500">프로젝트 완료에 필요한 총 작업 시간을 입력해주세요</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-medium hover:shadow-large">
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-violet-50 border-b border-purple-100">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 bg-purple-600 rounded-lg">
+                    <DollarSign className="w-5 h-5 text-white" />
+                  </div>
+                  예산 관리
+                </CardTitle>
+                <p className="text-gray-600 text-sm mt-2">프로젝트 예산을 설정해주세요</p>
+              </CardHeader>
+              <CardContent className="space-y-4 p-6">
+                <div className="space-y-2">
+                  <Label htmlFor="budget_amount" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <DollarSign className="w-4 h-4 text-purple-600" />
+                    프로젝트 예산
+                  </Label>
+                  <Input
+                    id="budget_amount"
+                    type="number"
+                    value={formData.budget_amount}
+                    onChange={(e) => handleInputChange('budget_amount', e.target.value)}
+                    placeholder="예: 50000000"
+                    className="input-modern h-12"
+                  />
+                  <p className="text-xs text-gray-500">프로젝트 진행에 필요한 총 예산을 입력해주세요</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contract_amount" className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <DollarSign className="w-4 h-4 text-purple-600" />
+                    계약 금액
+                  </Label>
+                  <Input
+                    id="contract_amount"
+                    type="number"
+                    value={formData.contract_amount}
+                    onChange={(e) => handleInputChange('contract_amount', e.target.value)}
+                    placeholder="예: 45000000"
+                    className="input-modern h-12"
+                  />
+                  <p className="text-xs text-gray-500">고객사와 체결한 실제 계약 금액을 입력해주세요</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* 액션 버튼 */}
+        <div className="mt-8">
+          <Card className="modern-card border-0 shadow-medium bg-gradient-to-r from-gray-50 to-gray-100">
+            <CardContent className="p-6">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <Target className="w-4 h-4 text-green-600" />
+                  </div>
+                  <span>모든 정보를 확인하신 후 프로젝트를 저장해주세요</span>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.back()}
+                    className="hover-lift px-6 h-12"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    취소
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={saving}
+                    className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large px-8 h-12"
+                  >
+                    {saving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        저장 중...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        프로젝트 저장
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </form>
+
+      {/* 도움말 섹션 */}
+      <div className="mt-8">
+        <Card className="modern-card border-0 shadow-medium bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                <AlertCircle className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">프로젝트 수정 가이드</h3>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• <strong>프로젝트명</strong>: 명확하고 구체적인 이름을 사용하세요</li>
+                  <li>• <strong>설명</strong>: 프로젝트의 목표와 범위를 상세히 기술하세요</li>
+                  <li>• <strong>일정</strong>: 현실적이고 달성 가능한 일정을 설정하세요</li>
+                  <li>• <strong>예산</strong>: 정확한 예산 정보로 프로젝트 수익성을 관리하세요</li>
+                </ul>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">설명</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                rows={4}
-              />
-            </div>
-
-            <div className="flex justify-end gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-              >
-                취소
-              </Button>
-              <Button type="submit" disabled={saving}>
-                <Save className="h-4 w-4 mr-2" />
-                {saving ? '저장 중...' : '저장'}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
+    </MainLayout>
   )
 }

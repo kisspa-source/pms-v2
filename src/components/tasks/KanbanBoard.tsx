@@ -29,6 +29,7 @@ interface KanbanBoardProps {
   tasks: TaskListItem[];
   onTaskUpdate: (taskId: string, updates: Partial<TaskListItem>) => Promise<void>;
   onTaskCreate?: () => void;
+  onTaskEdit?: (task: TaskListItem) => void;
   isLoading?: boolean;
 }
 
@@ -46,6 +47,7 @@ export default function KanbanBoard({
   tasks,
   onTaskUpdate,
   onTaskCreate,
+  onTaskEdit,
   isLoading = false,
 }: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<TaskListItem | null>(null);
@@ -222,6 +224,7 @@ export default function KanbanBoard({
               tasks={columns[column.id]}
               onTaskClick={handleTaskClick}
               onTaskUpdate={onTaskUpdate}
+              onTaskEdit={onTaskEdit}
             />
           ))}
         </div>

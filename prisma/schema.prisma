@@ -19,7 +19,13 @@ model User {
   avatar_url    String?
   role          Role
   department    String?
+  phone         String?
   hourly_rate   Float?
+  timezone      String?   @default("Asia/Seoul")
+  language      String?   @default("ko")
+  theme         String?   @default("system")
+  notifications Json?
+  work_preferences Json?
   created_at    DateTime  @default(now())
   updated_at    DateTime  @updatedAt
 
@@ -31,7 +37,7 @@ model User {
   time_logs          TimeLog[]
   comments           Comment[]
   attachments        Attachment[]
-  notifications      Notification[]
+  notifications_received Notification[]
   created_expenses   ProjectExpense[]
 
   @@map("users")
@@ -51,12 +57,18 @@ model Organization {
   id          String   @id @default(cuid())
   name        String
   description String?
+  address     String?
+  phone       String?
+  email       String?
+  website     String?
   created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt @default(now())
 
   // Relations
   members  OrganizationMember[]
   clients  Client[]
   projects Project[]
+  settings OrganizationSettings?
 
   @@map("organizations")
 }
@@ -75,6 +87,25 @@ model OrganizationMember {
 
   @@unique([organization_id, user_id])
   @@map("organization_members")
+}
+
+// 조직 설정
+model OrganizationSettings {
+  id                    String   @id @default(cuid())
+  organization_id       String   @unique
+  default_currency      String   @default("KRW")
+  default_timezone      String   @default("Asia/Seoul")
+  working_days          Json     @default("[\"monday\", \"tuesday\", \"wednesday\", \"thursday\", \"friday\"]")
+  project_code_format   String   @default("PRJ-{YYYY}-{###}")
+  auto_assign_tasks     Boolean  @default(false)
+  require_time_tracking Boolean  @default(true)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@map("organization_settings")
 }
 
 // 고객사 관리

@@ -17,6 +17,7 @@ interface KanbanColumnProps {
   tasks: TaskListItem[];
   onTaskClick: (task: TaskListItem) => void;
   onTaskUpdate: (taskId: string, updates: Partial<TaskListItem>) => Promise<void>;
+  onTaskEdit?: (task: TaskListItem) => void;
 }
 
 export default function KanbanColumn({
@@ -26,6 +27,7 @@ export default function KanbanColumn({
   tasks,
   onTaskClick,
   onTaskUpdate,
+  onTaskEdit,
 }: KanbanColumnProps) {
   const { setNodeRef } = useDroppable({
     id,
@@ -110,6 +112,7 @@ export default function KanbanColumn({
                   task={task}
                   onClick={() => onTaskClick(task)}
                   onUpdate={onTaskUpdate}
+                  onEdit={onTaskEdit ? () => onTaskEdit(task) : undefined}
                 />
               ))}
             </div>

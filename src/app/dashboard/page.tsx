@@ -31,9 +31,18 @@ interface DashboardStats {
   completedProjects: number
   totalUsers: number
   totalClients: number
+  activeClients: number
   monthlyRevenue: number
   pendingTasks: number
+  inProgressTasks: number
   overdueTasks: number
+  recentActivities: Array<{
+    id: string
+    type: string
+    description: string
+    timeText: string
+    timestamp: string
+  }>
 }
 
 export default function DashboardPage() {
@@ -46,9 +55,12 @@ export default function DashboardPage() {
     completedProjects: 0,
     totalUsers: 0,
     totalClients: 0,
+    activeClients: 0,
     monthlyRevenue: 0,
     pendingTasks: 0,
-    overdueTasks: 0
+    inProgressTasks: 0,
+    overdueTasks: 0,
+    recentActivities: []
   })
   const [loading, setLoading] = useState(true)
 
@@ -65,20 +77,17 @@ export default function DashboardPage() {
   const fetchDashboardStats = async () => {
     try {
       setLoading(true)
-      // 실제로는 API에서 데이터를 가져와야 함
-      // 현재는 더미 데이터 사용
-      setStats({
-        totalProjects: 25,
-        activeProjects: 12,
-        completedProjects: 8,
-        totalUsers: 24,
-        totalClients: 15,
-        monthlyRevenue: 125000000,
-        pendingTasks: 45,
-        overdueTasks: 3
-      })
+      const response = await fetch('/api/dashboard')
+      
+      if (!response.ok) {
+        throw new Error('대시보드 데이터를 불러오는데 실패했습니다.')
+      }
+      
+      const data = await response.json()
+      setStats(data)
     } catch (error) {
       console.error('대시보드 통계 조회 오류:', error)
+      // 오류 발생 시 기본값 유지
     } finally {
       setLoading(false)
     }
@@ -210,11 +219,16 @@ export default function DashboardPage() {
     return actions
   }
 
-  if (status === 'loading') {
+  if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">로딩 중...</div>
-      </div>
+      <MainLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <div className="text-lg text-gray-600">대시보드를 불러오는 중...</div>
+          </div>
+        </div>
+      </MainLayout>
     )
   }
 
@@ -225,43 +239,42 @@ export default function DashboardPage() {
   return (
     <MainLayout>
       <div className="p-6 space-y-8">
-        {/* 환영 메시지 */}
-        <div className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 shadow-soft border border-blue-100 fade-in">
+        {/* 환영 메시지 - 컴팩트 버전 */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 shadow-soft border border-blue-100 fade-in mb-4">
           <div>
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">{getRoleBasedGreeting()}</h1>
-            <p className="text-gray-600 text-lg">오늘도 좋은 하루 되세요! ✨</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">{getRoleBasedGreeting()}</h1>
+            <p className="text-gray-600 text-sm">오늘도 좋은 하루 되세요! ✨</p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="text-sm px-4 py-2 bg-white/80 backdrop-blur-sm shadow-soft">
+            <Badge variant="secondary" className="text-xs px-3 py-1 bg-white/80 backdrop-blur-sm shadow-soft">
               {session?.user?.role}
             </Badge>
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-medium">
-              <span className="text-white font-bold text-lg">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-medium">
+              <span className="text-white font-bold text-sm">
                 {session?.user?.name?.charAt(0) || 'U'}
               </span>
             </div>
           </div>
         </div>
         
-        {/* 통계 카드들 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {/* 통계 카드들 - 컴팩트 버전 */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           {getRoleBasedStats().map((stat, index) => {
             const IconComponent = stat.icon
             return (
-              <Card key={index} className="modern-card hover-lift hover-scale transition-all duration-300 border-0 shadow-medium hover:shadow-large fade-in" style={{animationDelay: `${index * 100}ms`}}>
-                <CardContent className="p-6">
+              <Card key={index} className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md fade-in" style={{animationDelay: `${index * 100}ms`}}>
+                <CardContent className="p-3">
                   <div className="flex items-center justify-between">
-                    <div className="space-y-3">
-                      <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">{stat.title}</p>
-                      <p className="text-4xl font-bold text-gray-800">{stat.value}</p>
-                      <div className="flex items-center space-x-2 bg-green-50 px-3 py-1 rounded-full">
-                        <TrendingUp className="h-4 w-4 text-green-600" />
-                        <span className="text-sm text-green-600 font-semibold">{stat.change}</span>
-                        <span className="text-xs text-gray-500">vs 지난달</span>
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{stat.title}</p>
+                      <p className="text-xl font-bold text-gray-800">{stat.value}</p>
+                      <div className="flex items-center space-x-1 mt-1">
+                        <TrendingUp className="h-3 w-3 text-green-600" />
+                        <span className="text-xs text-green-600 font-medium">{stat.change}</span>
                       </div>
                     </div>
-                    <div className={`p-4 rounded-2xl ${stat.bgColor} shadow-soft hover-scale`}>
-                      <IconComponent className={`h-8 w-8 ${stat.color}`} />
+                    <div className={`p-2 rounded-lg ${stat.bgColor} shadow-sm`}>
+                      <IconComponent className={`h-4 w-4 ${stat.color}`} />
                     </div>
                   </div>
                 </CardContent>
@@ -286,46 +299,35 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-start space-x-4 p-4 rounded-xl bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 transition-all duration-300 hover-scale border border-blue-200">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full mt-2 shadow-soft"></div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-semibold text-gray-800">새 프로젝트 생성</p>
-                      <Badge variant="secondary" className="text-xs bg-white/80 shadow-soft">2시간 전</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600">웹사이트 리뉴얼 프로젝트가 생성되었습니다.</p>
+                {stats.recentActivities.length > 0 ? (
+                  stats.recentActivities.slice(0, 4).map((activity, index) => {
+                    const colors = [
+                      { bg: 'from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200', border: 'border-blue-200', dot: 'bg-blue-500' },
+                      { bg: 'from-green-50 to-green-100 hover:from-green-100 hover:to-green-200', border: 'border-green-200', dot: 'bg-green-500' },
+                      { bg: 'from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-200', border: 'border-yellow-200', dot: 'bg-yellow-500' },
+                      { bg: 'from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200', border: 'border-purple-200', dot: 'bg-purple-500' }
+                    ]
+                    const color = colors[index % colors.length]
+                    
+                    return (
+                      <div key={activity.id} className={`flex items-start space-x-4 p-4 rounded-xl bg-gradient-to-r ${color.bg} transition-all duration-300 hover-scale border ${color.border}`}>
+                        <div className={`w-3 h-3 ${color.dot} rounded-full mt-2 shadow-soft`}></div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm font-semibold text-gray-800">{activity.type}</p>
+                            <Badge variant="secondary" className="text-xs bg-white/80 shadow-soft">{activity.timeText}</Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">{activity.description}</p>
+                        </div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Activity className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                    <p>최근 활동이 없습니다.</p>
                   </div>
-                </div>
-                <div className="flex items-start space-x-4 p-4 rounded-xl bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 transition-all duration-300 hover-scale border border-green-200">
-                  <div className="w-3 h-3 bg-green-500 rounded-full mt-2 shadow-soft"></div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-semibold text-gray-800">프로젝트 완료</p>
-                      <Badge variant="secondary" className="text-xs bg-white/80 shadow-soft">4시간 전</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600">모바일 앱 개발 프로젝트가 완료되었습니다.</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-4 p-4 rounded-xl bg-gradient-to-r from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-200 transition-all duration-300 hover-scale border border-yellow-200">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full mt-2 shadow-soft"></div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-semibold text-gray-800">새 사용자 추가</p>
-                      <Badge variant="secondary" className="text-xs bg-white/80 shadow-soft">1일 전</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600">김철수님이 시스템에 추가되었습니다.</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-4 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 transition-all duration-300 hover-scale border border-purple-200">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full mt-2 shadow-soft"></div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-semibold text-gray-800">고객사 정보 업데이트</p>
-                      <Badge variant="secondary" className="text-xs bg-white/80 shadow-soft">2일 전</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600">ABC 회사의 연락처 정보가 업데이트되었습니다.</p>
-                  </div>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>

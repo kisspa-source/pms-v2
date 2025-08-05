@@ -7,6 +7,8 @@ import KanbanBoard from '@/components/tasks/KanbanBoard';
 import TaskFilter from '@/components/tasks/TaskFilter';
 import TaskProgressChart from '@/components/tasks/TaskProgressChart';
 import TaskOverdueAlert from '@/components/tasks/TaskOverdueAlert';
+import TaskCreateModal from '@/components/tasks/TaskCreateModal';
+import TaskEditModal from '@/components/tasks/TaskEditModal';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Loading } from '@/components/ui/loading';
@@ -21,6 +23,9 @@ export default function TasksPage() {
   const [isStatisticsLoading, setIsStatisticsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'kanban' | 'statistics'>('kanban');
   const [assignees, setAssignees] = useState<Array<{ id: string; name: string; email: string }>>([]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<TaskListItem | null>(null);
 
   // 작업 목록 조회
   const fetchTasks = async () => {
@@ -114,8 +119,31 @@ export default function TasksPage() {
 
   // 작업 생성 핸들러
   const handleTaskCreate = () => {
-    // 작업 생성 모달 열기 (구현 예정)
-    console.log('작업 생성');
+    setShowCreateModal(true);
+  };
+
+  // 작업 생성 완료 핸들러
+  const handleTaskCreated = () => {
+    fetchTasks();
+    fetchStatistics();
+  };
+
+  // 작업 수정 핸들러
+  const handleTaskEdit = (task: TaskListItem) => {
+    setSelectedTask(task);
+    setShowEditModal(true);
+  };
+
+  // 작업 수정 완료 핸들러
+  const handleTaskUpdated = () => {
+    fetchTasks();
+    fetchStatistics();
+  };
+
+  // 작업 삭제 완료 핸들러
+  const handleTaskDeleted = () => {
+    fetchTasks();
+    fetchStatistics();
   };
 
   // 필터 변경 핸들러
@@ -163,6 +191,12 @@ export default function TasksPage() {
         </div>
         <div className="flex items-center space-x-2">
           <Button
+            onClick={handleTaskCreate}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            작업 추가
+          </Button>
+          <Button
             variant={viewMode === 'kanban' ? 'default' : 'outline'}
             onClick={() => setViewMode('kanban')}
           >
@@ -183,6 +217,7 @@ export default function TasksPage() {
           overdueTasks={overdueTasks}
           onTaskUpdate={handleTaskUpdate}
           onTaskClick={handleTaskClick}
+          onTaskEdit={handleTaskEdit}
         />
       </div>
 
@@ -200,6 +235,7 @@ export default function TasksPage() {
           tasks={tasks}
           onTaskUpdate={handleTaskUpdate}
           onTaskCreate={handleTaskCreate}
+          onTaskEdit={handleTaskEdit}
           isLoading={isLoading}
         />
       ) : (
@@ -246,6 +282,25 @@ export default function TasksPage() {
           </div>
         </Card>
       )}
+
+      {/* 작업 생성 모달 */}
+      <TaskCreateModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onTaskCreated={handleTaskCreated}
+      />
+
+      {/* 작업 수정 모달 */}
+      <TaskEditModal
+        isOpen={showEditModal}
+        task={selectedTask}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedTask(null);
+        }}
+        onTaskUpdated={handleTaskUpdated}
+        onTaskDeleted={handleTaskDeleted}
+      />
       </div>
     </MainLayout>
   );

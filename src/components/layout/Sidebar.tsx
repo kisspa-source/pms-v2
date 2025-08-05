@@ -14,16 +14,26 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Building2
+  Building2,
+  Building
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { usePermissions } from '@/hooks/usePermissions'
 
-const navigation = [
+interface NavigationItem {
+  name: string
+  href: string
+  icon: any
+  permission?: string
+}
+
+const navigation: NavigationItem[] = [
   { name: '대시보드', href: '/dashboard', icon: Home },
   { name: '프로젝트', href: '/projects', icon: FolderOpen },
   { name: '작업', href: '/tasks', icon: CheckSquare },
   { name: '고객사', href: '/clients', icon: Building2 },
   { name: '사용자', href: '/users', icon: Users },
+  { name: '조직 관리', href: '/organizations', icon: Building, permission: 'canManageOrganizations' },
   { name: '보고서', href: '/reports', icon: BarChart3 },
   { name: '설정', href: '/settings', icon: Settings },
 ]
@@ -37,6 +47,7 @@ interface SidebarProps {
 export function Sidebar({ collapsed = false, onToggle, className = '' }: SidebarProps) {
   const pathname = usePathname()
   const { data: session } = useSession()
+  const { allPermissions } = usePermissions()
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {
@@ -47,6 +58,14 @@ export function Sidebar({ collapsed = false, onToggle, className = '' }: Sidebar
     }
     return pathname.startsWith(href)
   }
+
+  // 권한에 따라 메뉴 필터링
+  const filteredNavigation = navigation.filter(item => {
+    if (item.permission) {
+      return allPermissions[item.permission as keyof typeof allPermissions]
+    }
+    return true
+  })
 
   return (
     <div className={`flex flex-col h-full bg-gradient-to-b from-gray-900 to-gray-800 border-r border-gray-700 transition-all duration-300 ${
@@ -85,7 +104,7 @@ export function Sidebar({ collapsed = false, onToggle, className = '' }: Sidebar
 
       {/* 네비게이션 */}
       <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
-        {navigation.map((item) => {
+        {filteredNavigation.map((item) => {
           const Icon = item.icon
           const active = isActive(item.href)
           

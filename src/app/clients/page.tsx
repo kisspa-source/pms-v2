@@ -140,75 +140,75 @@ export default function ClientsPage() {
   return (
     <MainLayout>
       <div className="container mx-auto p-6">
-        {/* 헤더 */}
-        <div className="flex justify-between items-center mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 shadow-soft border border-blue-100 fade-in">
+        {/* 헤더 - 컴팩트 버전 */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 shadow-soft border border-blue-100 fade-in">
           <div>
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">고객사 관리</h1>
-            <p className="text-gray-600 text-lg">전체 {stats?.totalClients || 0}개 고객사를 관리하고 있습니다 ✨</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">고객사 관리</h1>
+            <p className="text-gray-600 text-sm">전체 {stats?.totalClients || 0}개 고객사를 관리하고 있습니다 ✨</p>
           </div>
           <Link href="/clients/new">
-            <Button className="flex items-center gap-2 btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large transition-all duration-300 h-12 px-6">
-              <Plus className="w-5 h-5" />
+            <Button className="flex items-center gap-2 btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large transition-all duration-300 h-10 px-4 w-full sm:w-auto text-sm">
+              <Plus className="w-4 h-4" />
               새 고객사
             </Button>
           </Link>
         </div>
 
-        {/* 통계 카드 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="modern-card hover-lift hover-scale transition-all duration-300 border-0 shadow-medium hover:shadow-large fade-in">
-            <CardContent className="p-6">
+        {/* 통계 카드 - 매우 컴팩트 버전 */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
+          <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md fade-in">
+            <CardContent className="p-2">
               <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">전체 고객사</p>
-                  <p className="text-3xl font-bold text-gray-800">{stats?.totalClients || 0}</p>
+                <div>
+                  <p className="text-xs text-gray-500 font-medium">전체</p>
+                  <p className="text-lg font-bold text-gray-800">{stats?.totalClients || 0}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-soft hover-scale">
-                  <Building className="w-8 h-8 text-white" />
+                <div className="p-1.5 bg-gradient-to-r from-blue-500 to-blue-600 rounded-md">
+                  <Building className="w-3 h-3 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="modern-card hover-lift hover-scale transition-all duration-300 border-0 shadow-medium hover:shadow-large fade-in" style={{animationDelay: '100ms'}}>
-            <CardContent className="p-6">
+          <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md fade-in" style={{animationDelay: '100ms'}}>
+            <CardContent className="p-2">
               <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">활성 고객사</p>
-                  <p className="text-3xl font-bold text-gray-800">{stats?.statusDistribution?.[ClientStatus.ACTIVE] || 0}</p>
+                <div>
+                  <p className="text-xs text-gray-500 font-medium">활성</p>
+                  <p className="text-lg font-bold text-gray-800">{stats?.statusDistribution?.[ClientStatus.ACTIVE] || 0}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-soft hover-scale">
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                    <div className="w-4 h-4 bg-green-600 rounded-full"></div>
+                <div className="p-1.5 bg-gradient-to-r from-green-500 to-green-600 rounded-md">
+                  <div className="w-3 h-3 bg-white rounded-full flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="modern-card hover-lift hover-scale transition-all duration-300 border-0 shadow-medium hover:shadow-large fade-in" style={{animationDelay: '200ms'}}>
-            <CardContent className="p-6">
+          <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md fade-in" style={{animationDelay: '200ms'}}>
+            <CardContent className="p-2">
               <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">잠재 고객사</p>
-                  <p className="text-3xl font-bold text-gray-800">{stats?.statusDistribution?.[ClientStatus.PROSPECT] || 0}</p>
+                <div>
+                  <p className="text-xs text-gray-500 font-medium">잠재</p>
+                  <p className="text-lg font-bold text-gray-800">{stats?.statusDistribution?.[ClientStatus.PROSPECT] || 0}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl shadow-soft hover-scale">
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                    <div className="w-4 h-4 bg-blue-600 rounded-full"></div>
+                <div className="p-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-md">
+                  <div className="w-3 h-3 bg-white rounded-full flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="modern-card hover-lift hover-scale transition-all duration-300 border-0 shadow-medium hover:shadow-large fade-in" style={{animationDelay: '300ms'}}>
-            <CardContent className="p-6">
+          <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md fade-in" style={{animationDelay: '300ms'}}>
+            <CardContent className="p-2">
               <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">비활성 고객사</p>
-                  <p className="text-3xl font-bold text-gray-800">{stats?.statusDistribution?.[ClientStatus.INACTIVE] || 0}</p>
+                <div>
+                  <p className="text-xs text-gray-500 font-medium">비활성</p>
+                  <p className="text-lg font-bold text-gray-800">{stats?.statusDistribution?.[ClientStatus.INACTIVE] || 0}</p>
                 </div>
-                <div className="p-4 bg-gradient-to-r from-gray-500 to-gray-600 rounded-2xl shadow-soft hover-scale">
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                    <div className="w-4 h-4 bg-gray-600 rounded-full"></div>
+                <div className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 rounded-md">
+                  <div className="w-3 h-3 bg-white rounded-full flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 bg-gray-600 rounded-full"></div>
                   </div>
                 </div>
               </div>
@@ -216,10 +216,10 @@ export default function ClientsPage() {
           </Card>
         </div>
 
-        {/* 검색 및 필터 */}
-        <Card className="modern-card hover-lift transition-all duration-300 shadow-medium hover:shadow-large border-0 mb-8">
-          <CardContent className="p-8">
-          <div className="flex flex-col lg:flex-row gap-4">
+        {/* 검색 및 필터 - 컴팩트 버전 */}
+        <Card className="modern-card transition-all duration-300 shadow-sm hover:shadow-md border-0 mb-4">
+          <CardContent className="p-4">
+          <div className="flex flex-col lg:flex-row gap-3">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -228,34 +228,34 @@ export default function ClientsPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="pl-10"
+                  className="pl-10 h-9 input-modern text-sm"
                 />
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 hover-lift h-9 px-3 text-sm"
               >
-                <Filter className="w-4 h-4" />
+                <Filter className="w-3 h-3" />
                 필터
               </Button>
-              <Button onClick={handleSearch} className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">검색</Button>
-              <Button variant="outline" onClick={clearFilters} className="hover-lift">초기화</Button>
+              <Button onClick={handleSearch} className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-9 px-3 text-sm">검색</Button>
+              <Button variant="outline" onClick={clearFilters} className="hover-lift h-9 px-3 text-sm">초기화</Button>
             </div>
           </div>
 
           {/* 필터 옵션 */}
           {showFilters && (
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 border-t">
               <div>
-                <Label htmlFor="status">상태</Label>
+                <Label htmlFor="status" className="text-xs">상태</Label>
                 <select
                   id="status"
                   value={filters.status}
                   onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                  className="w-full mt-1 p-2 border border-gray-300 rounded-md text-sm h-8"
                 >
                   <option value="">전체</option>
                   {Object.values(ClientStatus).map(status => (
@@ -264,21 +264,23 @@ export default function ClientsPage() {
                 </select>
               </div>
               <div>
-                <Label htmlFor="industry">산업</Label>
+                <Label htmlFor="industry" className="text-xs">산업</Label>
                 <Input
                   id="industry"
                   placeholder="산업 분야"
                   value={filters.industry}
                   onChange={(e) => setFilters(prev => ({ ...prev, industry: e.target.value }))}
+                  className="h-8 text-sm"
                 />
               </div>
               <div>
-                <Label htmlFor="organizationId">조직</Label>
+                <Label htmlFor="organizationId" className="text-xs">조직</Label>
                 <Input
                   id="organizationId"
                   placeholder="조직 ID"
                   value={filters.organizationId}
                   onChange={(e) => setFilters(prev => ({ ...prev, organizationId: e.target.value }))}
+                  className="h-8 text-sm"
                 />
               </div>
             </div>
@@ -391,15 +393,15 @@ export default function ClientsPage() {
           ))}
         </div>
 
-        {/* 페이지네이션 */}
+        {/* 페이지네이션 - 컴팩트 버전 */}
         {pagination.totalPages > 1 && (
-          <div className="flex justify-center mt-12">
-            <div className="flex gap-3 bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-medium">
+          <div className="flex justify-center mt-6">
+            <div className="flex gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-2 shadow-sm">
               <Button
                 variant="outline"
                 onClick={() => handlePageChange(pagination.page - 1)}
                 disabled={pagination.page === 1}
-                className="hover-lift"
+                className="hover-lift h-8 px-3 text-sm"
               >
                 이전
               </Button>
@@ -408,7 +410,7 @@ export default function ClientsPage() {
                   key={page}
                   variant={page === pagination.page ? "default" : "outline"}
                   onClick={() => handlePageChange(page)}
-                  className={page === pagination.page ? "btn-modern bg-gradient-to-r from-blue-600 to-purple-600" : "hover-lift"}
+                  className={page === pagination.page ? "btn-modern bg-gradient-to-r from-blue-600 to-purple-600 h-8 px-3 text-sm" : "hover-lift h-8 px-3 text-sm"}
                 >
                   {page}
                 </Button>
@@ -417,7 +419,7 @@ export default function ClientsPage() {
                 variant="outline"
                 onClick={() => handlePageChange(pagination.page + 1)}
                 disabled={pagination.page === pagination.totalPages}
-                className="hover-lift"
+                className="hover-lift h-8 px-3 text-sm"
               >
                 다음
               </Button>
@@ -425,17 +427,17 @@ export default function ClientsPage() {
           </div>
         )}
 
-        {/* 빈 상태 */}
+        {/* 빈 상태 - 컴팩트 버전 */}
         {clients.length === 0 && !loading && (
-          <div className="text-center py-20 fade-in">
-            <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-soft">
-              <Building className="w-12 h-12 text-blue-600" />
+          <div className="text-center py-12 fade-in">
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-soft">
+              <Building className="w-8 h-8 text-blue-600" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-3">고객사가 없습니다</h3>
-            <p className="text-gray-600 mb-8 text-lg">새 고객사를 등록하여 시작하세요.</p>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">고객사가 없습니다</h3>
+            <p className="text-gray-600 mb-6">새 고객사를 등록하여 시작하세요.</p>
             <Link href="/clients/new">
-              <Button className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large h-12 px-8">
-                <Plus className="w-5 h-5 mr-2" />
+              <Button className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large h-10 px-6 text-sm">
+                <Plus className="w-4 h-4 mr-2" />
                 새 고객사 등록
               </Button>
             </Link>

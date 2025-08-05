@@ -83,7 +83,7 @@ export default function ProjectSchedulePage() {
   const router = useRouter();
   const projectId = params.id as string;
   
-  const [activeTab, setActiveTab] = useState<'gantt' | 'timeline' | 'dependencies' | 'phases'>('gantt');
+  const [activeTab, setActiveTab] = useState<'gantt' | 'timeline' | 'dependencies' | 'phases'>('phases');
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [phases, setPhases] = useState<ProjectPhase[]>([]);
@@ -93,10 +93,10 @@ export default function ProjectSchedulePage() {
 
   // 탭 옵션
   const tabs = [
+    { id: 'phases', label: '단계 관리', icon: '📋' },
     { id: 'gantt', label: '간트 차트', icon: '📊' },
     { id: 'timeline', label: '타임라인', icon: '📅' },
-    { id: 'dependencies', label: '의존성 관리', icon: '🔗' },
-    { id: 'phases', label: '단계 관리', icon: '📋' }
+    { id: 'dependencies', label: '의존성 관리', icon: '🔗' }
   ];
 
   // 데이터 로드
@@ -117,52 +117,73 @@ export default function ProjectSchedulePage() {
       ]);
 
       if (!projectRes.ok) {
-        throw new Error('프로젝트 정보를 불러올 수 없습니다.');
+        const errorData = await projectRes.json().catch(() => ({ error: '프로젝트 정보를 불러올 수 없습니다.' }));
+        throw new Error(errorData.error || '프로젝트 정보를 불러올 수 없습니다.');
       }
 
       const projectData = await projectRes.json();
       setProject(projectData);
 
       if (tasksRes.ok) {
-        const tasksData = await tasksRes.json();
-        const formattedTasks = tasksData.tasks.map((task: any) => ({
-          ...task,
-          start_date: task.start_date ? new Date(task.start_date) : null,
-          due_date: task.due_date ? new Date(task.due_date) : null,
-        }));
-        setTasks(formattedTasks);
+        try {
+          const tasksData = await tasksRes.json();
+          const formattedTasks = (tasksData.tasks || []).map((task: any) => ({
+            ...task,
+            start_date: task.start_date ? new Date(task.start_date) : null,
+            due_date: task.due_date ? new Date(task.due_date) : null,
+          }));
+          setTasks(formattedTasks);
+        } catch (error) {
+          console.error('작업 데이터 파싱 오류:', error);
+          setTasks([]);
+        }
+      } else {
+        setTasks([]);
       }
 
+      let phasesData: any[] = [];
       if (phasesRes.ok) {
-        const phasesData = await phasesRes.json();
-        const formattedPhases = phasesData.map((phase: any) => ({
-          ...phase,
-          start_date: phase.start_date ? new Date(phase.start_date) : null,
-          end_date: phase.end_date ? new Date(phase.end_date) : null,
-        }));
-        setPhases(formattedPhases);
+        try {
+          phasesData = await phasesRes.json();
+          const formattedPhases = (phasesData || []).map((phase: any) => ({
+            ...phase,
+            start_date: phase.start_date ? new Date(phase.start_date) : null,
+            end_date: phase.end_date ? new Date(phase.end_date) : null,
+          }));
+          setPhases(formattedPhases);
+        } catch (error) {
+          console.error('단계 데이터 파싱 오류:', error);
+          setPhases([]);
+          phasesData = [];
+        }
+      } else {
+        setPhases([]);
       }
 
       if (dependenciesRes.ok) {
-        const dependenciesData = await dependenciesRes.json();
-        setDependencies(dependenciesData);
+        try {
+          const dependenciesData = await dependenciesRes.json();
+          setDependencies(Array.isArray(dependenciesData) ? dependenciesData : []);
+        } catch (error) {
+          console.error('의존성 데이터 파싱 오류:', error);
+          setDependencies([]);
+        }
+      } else {
+        setDependencies([]);
       }
 
       // 마일스톤은 단계의 종료일을 기준으로 생성
       const generatedMilestones: Milestone[] = [];
-      if (phasesRes.ok) {
-        const phasesData = await phasesRes.json();
-        phasesData.forEach((phase: any) => {
-          if (phase.end_date) {
-            generatedMilestones.push({
-              id: `phase-${phase.id}`,
-              title: `${phase.name} 완료`,
-              date: new Date(phase.end_date),
-              type: 'milestone'
-            });
-          }
-        });
-      }
+      phasesData.forEach((phase: any) => {
+        if (phase.end_date) {
+          generatedMilestones.push({
+            id: `phase-${phase.id}`,
+            title: `${phase.name} 완료`,
+            date: new Date(phase.end_date),
+            type: 'milestone'
+          });
+        }
+      });
       setMilestones(generatedMilestones);
       
     } catch (error) {
@@ -525,11 +546,13 @@ export default function ProjectSchedulePage() {
 
         {activeTab === 'phases' && (
           <ProjectPhaseManager
+            projectId={projectId}
             phases={phases}
             onPhaseAdd={handlePhaseAdd}
             onPhaseUpdate={handlePhaseUpdate}
             onPhaseDelete={handlePhaseDelete}
             onPhaseReorder={handlePhaseReorder}
+            onPhasesReload={loadProjectData}
           />
         )}
       </div>

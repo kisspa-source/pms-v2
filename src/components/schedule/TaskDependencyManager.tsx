@@ -10,7 +10,11 @@ interface Task {
   status: string;
   start_date: Date | null;
   due_date: Date | null;
-  assignee?: string;
+  assignee?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 interface TaskDependency {
@@ -19,6 +23,16 @@ interface TaskDependency {
   successor_id: string;
   dependency_type: 'FINISH_TO_START' | 'START_TO_START' | 'FINISH_TO_FINISH' | 'START_TO_FINISH';
   lag_days: number;
+  predecessor?: {
+    id: string;
+    title: string;
+    status: string;
+  };
+  successor?: {
+    id: string;
+    title: string;
+    status: string;
+  };
 }
 
 interface TaskDependencyManagerProps {
@@ -172,7 +186,7 @@ export const TaskDependencyManager: React.FC<TaskDependencyManagerProps> = ({
                   <option value="">선행 작업 선택</option>
                   {tasks.map(task => (
                     <option key={task.id} value={task.id}>
-                      {task.title} ({task.assignee || '미배정'})
+                      {task.title} ({task.assignee?.name || '미배정'})
                     </option>
                   ))}
                 </select>
@@ -190,7 +204,7 @@ export const TaskDependencyManager: React.FC<TaskDependencyManagerProps> = ({
                   <option value="">후행 작업 선택</option>
                   {tasks.map(task => (
                     <option key={task.id} value={task.id}>
-                      {task.title} ({task.assignee || '미배정'})
+                      {task.title} ({task.assignee?.name || '미배정'})
                     </option>
                   ))}
                 </select>
@@ -258,17 +272,23 @@ export const TaskDependencyManager: React.FC<TaskDependencyManagerProps> = ({
         ) : (
           <div className="space-y-3">
             {dependencies.map((dependency) => {
-              const predecessor = tasks.find(t => t.id === dependency.predecessor_id);
-              const successor = tasks.find(t => t.id === dependency.successor_id);
+              // API 응답에서 predecessor와 successor 정보가 포함되어 있는 경우
+              const predecessorTitle = dependency.predecessor?.title || 
+                tasks.find(t => t.id === dependency.predecessor_id)?.title || 
+                '알 수 없는 작업';
+              
+              const successorTitle = dependency.successor?.title || 
+                tasks.find(t => t.id === dependency.successor_id)?.title || 
+                '알 수 없는 작업';
 
               return (
                 <div key={dependency.id} className="border rounded-lg p-3 bg-white">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{predecessor?.title}</span>
+                        <span className="font-medium text-sm">{predecessorTitle}</span>
                         <span className="text-gray-400">→</span>
-                        <span className="font-medium text-sm">{successor?.title}</span>
+                        <span className="font-medium text-sm">{successorTitle}</span>
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         타입: {getDependencyTypeLabel(dependency.dependency_type)}
@@ -307,10 +327,12 @@ export const TaskDependencyManager: React.FC<TaskDependencyManagerProps> = ({
                         <span className="text-gray-400">없음</span>
                       ) : (
                         predecessors.map(dep => {
-                          const pred = tasks.find(t => t.id === dep.predecessor_id);
+                          const predTitle = dep.predecessor?.title || 
+                            tasks.find(t => t.id === dep.predecessor_id)?.title || 
+                            '알 수 없는 작업';
                           return (
                             <div key={dep.id} className="text-blue-600">
-                              • {pred?.title}
+                              • {predTitle}
                             </div>
                           );
                         })
@@ -324,10 +346,12 @@ export const TaskDependencyManager: React.FC<TaskDependencyManagerProps> = ({
                         <span className="text-gray-400">없음</span>
                       ) : (
                         successors.map(dep => {
-                          const succ = tasks.find(t => t.id === dep.successor_id);
+                          const succTitle = dep.successor?.title || 
+                            tasks.find(t => t.id === dep.successor_id)?.title || 
+                            '알 수 없는 작업';
                           return (
                             <div key={dep.id} className="text-green-600">
-                              • {succ?.title}
+                              • {succTitle}
                             </div>
                           );
                         })

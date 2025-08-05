@@ -80,14 +80,28 @@ export async function GET(request: NextRequest) {
 
     const totalPages = Math.ceil(total / limit);
 
+    // 페이지네이션이 요청된 경우
+    if (searchParams.has('page')) {
+      return NextResponse.json({
+        users: transformedUsers,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+        },
+      });
+    }
+
+    // 단순 목록 요청인 경우 (작업 생성 모달 등에서 사용)
     return NextResponse.json({
-      users: transformedUsers,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-      },
+      users: transformedUsers.map(user => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.organization?.name || null,
+      }))
     });
   } catch (error) {
     console.error('사용자 목록 조회 오류:', error);

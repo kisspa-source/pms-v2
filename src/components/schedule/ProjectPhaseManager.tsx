@@ -19,19 +19,23 @@ interface ProjectPhase {
 }
 
 interface ProjectPhaseManagerProps {
+  projectId: string;
   phases: ProjectPhase[];
   onPhaseAdd: (phase: Omit<ProjectPhase, 'id' | 'task_count' | 'completed_task_count'>) => void;
   onPhaseUpdate: (phaseId: string, updates: Partial<ProjectPhase>) => void;
   onPhaseDelete: (phaseId: string) => void;
   onPhaseReorder: (phaseId: string, newOrder: number) => void;
+  onPhasesReload: () => void;
 }
 
 export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
+  projectId,
   phases,
   onPhaseAdd,
   onPhaseUpdate,
   onPhaseDelete,
-  onPhaseReorder
+  onPhaseReorder,
+  onPhasesReload
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingPhase, setEditingPhase] = useState<string | null>(null);
@@ -42,6 +46,12 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
     end_date: '',
     status: 'PENDING' as ProjectPhase['status']
   });
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<{
+    success: number;
+    errors: number;
+    errorMessages: string[];
+  } | null>(null);
 
   // 단계 상태 옵션
   const phaseStatuses = [
@@ -121,6 +131,23 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
     resetForm();
   };
 
+  // 단계 삭제 확인
+  const handleDeletePhase = (phase: ProjectPhase) => {
+    let confirmMessage = `"${phase.name}" 단계를 삭제하시겠습니까?`;
+    
+    // 작업이 있는 경우 추가 경고
+    if (phase.task_count > 0) {
+      confirmMessage += `\n\n⚠️ 이 단계에는 ${phase.task_count}개의 작업이 연결되어 있습니다.`;
+      confirmMessage += `\n단계를 삭제하면 연결된 작업들의 단계 정보가 제거됩니다.`;
+    }
+    
+    confirmMessage += `\n\n이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?`;
+    
+    if (window.confirm(confirmMessage)) {
+      onPhaseDelete(phase.id);
+    }
+  };
+
   // 진행률 계산
   const getProgressPercentage = (phase: ProjectPhase) => {
     if (phase.task_count === 0) return 0;
@@ -139,6 +166,107 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
     return found ? found.label : status;
   };
 
+  // 엑셀 양식 다운로드
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}/phases/excel`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        }
+      });
+      
+      if (!response.ok) {
+        // 응답이 JSON인지 확인
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const error = await response.json();
+          alert(error.error || '엑셀 양식 다운로드에 실패했습니다.');
+        } else {
+          alert(`엑셀 양식 다운로드에 실패했습니다. (상태: ${response.status})`);
+        }
+        return;
+      }
+
+      const blob = await response.blob();
+      
+      // blob이 유효한지 확인
+      if (blob.size === 0) {
+        alert('다운로드된 파일이 비어있습니다.');
+        return;
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'project_phases_template.xlsx';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      
+      // 정리
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 100);
+      
+    } catch (error) {
+      console.error('엑셀 양식 다운로드 오류:', error);
+      alert('엑셀 양식 다운로드 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 엑셀 파일 업로드
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // 파일 확장자 검증
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      alert('엑셀 파일만 업로드 가능합니다.');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`/api/projects/${projectId}/phases/excel`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.error || '엑셀 업로드에 실패했습니다.');
+        if (result.details) {
+          setUploadResult(result.details);
+        }
+        return;
+      }
+
+      setUploadResult(result);
+      
+      // 성공한 경우 데이터 새로고침
+      if (result.success > 0) {
+        onPhasesReload();
+        alert(`${result.success}개의 단계가 성공적으로 등록되었습니다.${result.errors > 0 ? ` (${result.errors}개 오류)` : ''}`);
+      }
+
+    } catch (error) {
+      console.error('엑셀 업로드 오류:', error);
+      alert('엑셀 업로드 중 오류가 발생했습니다.');
+    } finally {
+      setIsUploading(false);
+      // 파일 입력 초기화
+      event.target.value = '';
+    }
+  };
+
   return (
     <Card className="p-4">
       <div className="mb-4">
@@ -150,12 +278,65 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
 
       {/* 단계 추가 버튼 */}
       <div className="mb-6">
-        <Button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="mb-4"
-        >
-          {showAddForm ? '단계 추가 취소' : '새 단계 추가'}
-        </Button>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Button
+            onClick={() => setShowAddForm(!showAddForm)}
+          >
+            {showAddForm ? '단계 추가 취소' : '새 단계 추가'}
+          </Button>
+          
+          <Button
+            onClick={handleDownloadTemplate}
+            className="bg-green-500 hover:bg-green-600"
+          >
+            📥 엑셀 양식 다운로드
+          </Button>
+          
+          <div className="relative">
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileUpload}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              disabled={isUploading}
+            />
+            <Button
+              className="bg-blue-500 hover:bg-blue-600"
+              disabled={isUploading}
+            >
+              {isUploading ? '업로드 중...' : '📤 엑셀 업로드'}
+            </Button>
+          </div>
+        </div>
+
+        {/* 업로드 결과 표시 */}
+        {uploadResult && (
+          <div className="mb-4 p-4 border rounded-lg bg-gray-50">
+            <h5 className="font-medium mb-2">업로드 결과</h5>
+            <div className="text-sm space-y-1">
+              <div className="text-green-600">✅ 성공: {uploadResult.success}개</div>
+              {uploadResult.errors > 0 && (
+                <div className="text-red-600">❌ 오류: {uploadResult.errors}개</div>
+              )}
+              {uploadResult.errorMessages.length > 0 && (
+                <div className="mt-2">
+                  <div className="font-medium text-red-600 mb-1">오류 상세:</div>
+                  <ul className="list-disc list-inside text-red-600 text-xs space-y-1">
+                    {uploadResult.errorMessages.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <Button
+              onClick={() => setUploadResult(null)}
+              className="mt-2 text-xs bg-gray-400 hover:bg-gray-500"
+            >
+              닫기
+            </Button>
+          </div>
+        )}
 
         {/* 단계 추가 폼 */}
         {showAddForm && (
@@ -352,15 +533,15 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
                     <div className="flex gap-2">
                       <Button
                         onClick={() => startEditing(phase)}
-                        className="text-blue-500 hover:text-blue-700 text-sm"
+                        className="px-3 py-1 text-sm bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200 hover:border-blue-400 rounded-md transition-colors"
                       >
-                        수정
+                        ✏️ 수정
                       </Button>
                       <Button
-                        onClick={() => onPhaseDelete(phase.id)}
-                        className="text-red-500 hover:text-red-700 text-sm"
+                        onClick={() => handleDeletePhase(phase)}
+                        className="px-3 py-1 text-sm bg-red-100 text-red-700 border border-red-300 hover:bg-red-200 hover:border-red-400 rounded-md transition-colors"
                       >
-                        삭제
+                        🗑️ 삭제
                       </Button>
                     </div>
                   </div>

@@ -50,14 +50,16 @@ export default function ProjectsPage() {
   const [showFilters, setShowFilters] = useState(false)
 
   // 프로젝트 목록 조회
-  const fetchProjects = async () => {
+  const fetchProjects = async (currentPage?: number) => {
     try {
       setLoading(true)
       setError(null)
       setHasPermissionError(false)
       
+      const pageToUse = currentPage || pagination.page
+      
       const params = new URLSearchParams({
-        page: pagination.page.toString(),
+        page: pageToUse.toString(),
         limit: pagination.limit.toString(),
         search: searchTerm,
         ...filters
@@ -80,22 +82,33 @@ export default function ProjectsPage() {
       }
 
       const data: ProjectListResponse = await response.json()
+      
+      // 데이터 유효성 검사
+      if (!data || !data.projects || !Array.isArray(data.projects)) {
+        throw new Error('잘못된 응답 형식입니다.')
+      }
+      
       setProjects(data.projects)
-      setPagination(data.pagination)
+      
+      if (data.pagination) {
+        setPagination(data.pagination)
+      }
       
       // 통계 계산
       const statusDistribution: Record<string, number> = {}
       let totalProgress = 0
       
       data.projects.forEach(project => {
-        statusDistribution[project.status] = (statusDistribution[project.status] || 0) + 1
-        totalProgress += project.progress
+        if (project && project.status) {
+          statusDistribution[project.status] = (statusDistribution[project.status] || 0) + 1
+          totalProgress += project.progress || 0
+        }
       })
       
       setStats({
         statusDistribution,
         averageProgress: data.projects.length > 0 ? totalProgress / data.projects.length : 0,
-        totalProjects: data.pagination.total
+        totalProjects: data.pagination?.total || data.projects.length
       })
     } catch (error) {
       console.error('프로젝트 목록 조회 오류:', error)
@@ -126,6 +139,7 @@ export default function ProjectsPage() {
   // 페이지 변경
   const handlePageChange = (page: number) => {
     setPagination(prev => ({ ...prev, page }))
+    fetchProjects(page)
   }
 
   // 프로젝트 삭제
@@ -190,7 +204,7 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     fetchProjects()
-  }, [pagination.page])
+  }, [])
 
   if (loading) return (
     <MainLayout>
@@ -265,77 +279,77 @@ export default function ProjectsPage() {
   return (
     <MainLayout>
       <div className="container mx-auto p-6">
-      {/* 헤더 */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 shadow-soft border border-blue-100">
+      {/* 헤더 - 컴팩트 버전 */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 shadow-soft border border-blue-100">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">프로젝트 관리</h1>
-          <p className="text-gray-600 text-lg">전체 {stats?.totalProjects || 0}개 프로젝트를 관리하고 있습니다 ✨</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">프로젝트 관리</h1>
+          <p className="text-gray-600 text-sm">전체 {stats?.totalProjects || 0}개 프로젝트를 관리하고 있습니다 ✨</p>
         </div>
         <PermissionGuard permission="canManageProjects" fallback={null}>
           <Link href="/projects/new">
-            <Button className="flex items-center gap-2 btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large transition-all duration-300 h-12 px-6 w-full sm:w-auto">
-              <Plus className="w-5 h-5" />
+            <Button className="flex items-center gap-2 btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large transition-all duration-300 h-10 px-4 w-full sm:w-auto text-sm">
+              <Plus className="w-4 h-4" />
               새 프로젝트
             </Button>
           </Link>
         </PermissionGuard>
       </div>
 
-      {/* 통계 카드 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="modern-card hover-lift hover-scale transition-all duration-300 border-0 shadow-medium hover:shadow-large">
-          <CardContent className="p-6">
+      {/* 통계 카드 - 매우 컴팩트 버전 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
+        <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
+          <CardContent className="p-2">
             <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">전체 프로젝트</p>
-                <p className="text-3xl font-bold text-gray-800">{stats?.totalProjects || 0}</p>
+              <div>
+                <p className="text-xs text-gray-500 font-medium">전체</p>
+                <p className="text-lg font-bold text-gray-800">{stats?.totalProjects || 0}</p>
               </div>
-              <div className="p-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-soft hover-scale">
-                <Calendar className="w-8 h-8 text-white" />
+              <div className="p-1.5 bg-gradient-to-r from-blue-500 to-blue-600 rounded-md">
+                <Calendar className="w-3 h-3 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="modern-card hover-lift hover-scale transition-all duration-300 border-0 shadow-medium hover:shadow-large">
-          <CardContent className="p-6">
+        <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
+          <CardContent className="p-2">
             <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">진행 중</p>
-                <p className="text-3xl font-bold text-gray-800">{stats?.statusDistribution?.[ProjectStatus.IN_PROGRESS] || 0}</p>
+              <div>
+                <p className="text-xs text-gray-500 font-medium">진행중</p>
+                <p className="text-lg font-bold text-gray-800">{stats?.statusDistribution?.[ProjectStatus.IN_PROGRESS] || 0}</p>
               </div>
-              <div className="p-4 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-soft hover-scale">
-                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                  <div className="w-4 h-4 bg-green-600 rounded-full"></div>
+              <div className="p-1.5 bg-gradient-to-r from-green-500 to-green-600 rounded-md">
+                <div className="w-3 h-3 bg-white rounded-full flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 bg-green-600 rounded-full"></div>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="modern-card hover-lift hover-scale transition-all duration-300 border-0 shadow-medium hover:shadow-large">
-          <CardContent className="p-6">
+        <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
+          <CardContent className="p-2">
             <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">평균 진행률</p>
-                <p className="text-3xl font-bold text-gray-800">{Math.round(stats?.averageProgress || 0)}%</p>
+              <div>
+                <p className="text-xs text-gray-500 font-medium">평균진행율</p>
+                <p className="text-lg font-bold text-gray-800">{Math.round(stats?.averageProgress || 0)}%</p>
               </div>
-              <div className="p-4 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl shadow-soft hover-scale">
-                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                  <div className="w-4 h-4 bg-purple-600 rounded-full"></div>
+              <div className="p-1.5 bg-gradient-to-r from-purple-500 to-purple-600 rounded-md">
+                <div className="w-3 h-3 bg-white rounded-full flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 bg-purple-600 rounded-full"></div>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="modern-card hover-lift hover-scale transition-all duration-300 border-0 shadow-medium hover:shadow-large">
-          <CardContent className="p-6">
+        <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
+          <CardContent className="p-2">
             <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">완료</p>
-                <p className="text-3xl font-bold text-gray-800">{stats?.statusDistribution?.[ProjectStatus.COMPLETED] || 0}</p>
+              <div>
+                <p className="text-xs text-gray-500 font-medium">완료</p>
+                <p className="text-lg font-bold text-gray-800">{stats?.statusDistribution?.[ProjectStatus.COMPLETED] || 0}</p>
               </div>
-              <div className="p-4 bg-gradient-to-r from-gray-500 to-gray-600 rounded-2xl shadow-soft hover-scale">
-                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                  <div className="w-4 h-4 bg-gray-600 rounded-full"></div>
+              <div className="p-1.5 bg-gradient-to-r from-gray-500 to-gray-600 rounded-md">
+                <div className="w-3 h-3 bg-white rounded-full flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 bg-gray-600 rounded-full"></div>
                 </div>
               </div>
             </div>
@@ -343,10 +357,10 @@ export default function ProjectsPage() {
         </Card>
       </div>
 
-      {/* 검색 및 필터 */}
-      <Card className="modern-card hover-lift transition-all duration-300 shadow-medium hover:shadow-large border-0 mb-8">
-        <CardContent className="p-8">
-          <div className="flex flex-col lg:flex-row gap-4">
+      {/* 검색 및 필터 - 컴팩트 버전 */}
+      <Card className="modern-card transition-all duration-300 shadow-sm hover:shadow-md border-0 mb-4">
+        <CardContent className="p-4">
+          <div className="flex flex-col lg:flex-row gap-3">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -355,7 +369,7 @@ export default function ProjectsPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="pl-10 h-12 input-modern"
+                  className="pl-10 h-9 input-modern text-sm"
                 />
               </div>
             </div>
@@ -363,26 +377,26 @@ export default function ProjectsPage() {
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 hover-lift"
+                className="flex items-center gap-2 hover-lift h-9 px-3 text-sm"
               >
-                <Filter className="w-4 h-4" />
+                <Filter className="w-3 h-3" />
                 필터
               </Button>
-              <Button onClick={handleSearch} className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">검색</Button>
-              <Button variant="outline" onClick={clearFilters} className="hover-lift">초기화</Button>
+              <Button onClick={handleSearch} className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-9 px-3 text-sm">검색</Button>
+              <Button variant="outline" onClick={clearFilters} className="hover-lift h-9 px-3 text-sm">초기화</Button>
             </div>
           </div>
 
           {/* 필터 옵션 */}
           {showFilters && (
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t">
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-4 gap-3 pt-3 border-t">
               <div>
-                <Label htmlFor="status">상태</Label>
+                <Label htmlFor="status" className="text-xs">상태</Label>
                 <select
                   id="status"
                   value={filters.status}
                   onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                  className="w-full mt-1 p-2 border border-gray-300 rounded-md text-sm h-8"
                 >
                   <option value="">전체</option>
                   {Object.values(ProjectStatus).map(status => (
@@ -391,12 +405,12 @@ export default function ProjectsPage() {
                 </select>
               </div>
               <div>
-                <Label htmlFor="priority">우선순위</Label>
+                <Label htmlFor="priority" className="text-xs">우선순위</Label>
                 <select
                   id="priority"
                   value={filters.priority}
                   onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                  className="w-full mt-1 p-2 border border-gray-300 rounded-md text-sm h-8"
                 >
                   <option value="">전체</option>
                   {Object.values(Priority).map(priority => (
@@ -405,12 +419,12 @@ export default function ProjectsPage() {
                 </select>
               </div>
               <div>
-                <Label htmlFor="projectType">프로젝트 타입</Label>
+                <Label htmlFor="projectType" className="text-xs">프로젝트 타입</Label>
                 <select
                   id="projectType"
                   value={filters.projectType}
                   onChange={(e) => setFilters(prev => ({ ...prev, projectType: e.target.value }))}
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md"
+                  className="w-full mt-1 p-2 border border-gray-300 rounded-md text-sm h-8"
                 >
                   <option value="">전체</option>
                   {Object.values(ProjectType).map(type => (
@@ -419,12 +433,13 @@ export default function ProjectsPage() {
                 </select>
               </div>
               <div>
-                <Label htmlFor="clientId">고객사</Label>
+                <Label htmlFor="clientId" className="text-xs">고객사</Label>
                 <Input
                   id="clientId"
                   placeholder="고객사 ID"
                   value={filters.clientId}
                   onChange={(e) => setFilters(prev => ({ ...prev, clientId: e.target.value }))}
+                  className="h-8 text-sm"
                 />
               </div>
             </div>
@@ -432,24 +447,24 @@ export default function ProjectsPage() {
         </CardContent>
       </Card>
 
-      {/* 프로젝트 목록 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+      {/* 프로젝트 목록 - 향상된 카드 크기와 가시성 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
         {projects.map((project, index) => (
-          <Card key={project.id} className="modern-card hover-lift hover-scale transition-all duration-300 border-0 shadow-medium hover:shadow-large fade-in" style={{animationDelay: `${index * 50}ms`}}>
-            <CardHeader className="pb-3">
+          <Card key={project.id} className="modern-card hover-lift hover-scale transition-all duration-300 border-0 shadow-lg hover:shadow-xl fade-in bg-white" style={{animationDelay: `${index * 50}ms`}}>
+            <CardHeader className="pb-4">
               <div className="flex justify-between items-start">
-                <CardTitle className="text-lg font-semibold line-clamp-2">
+                <CardTitle className="text-xl font-bold line-clamp-2 text-gray-800">
                   {project.name}
                 </CardTitle>
                 <div className="flex gap-1">
                   <Link href={`/projects/${project.id}`}>
-                    <Button variant="ghost" size="sm" className="hover-scale bg-blue-50 hover:bg-blue-100 text-blue-600">
+                    <Button variant="ghost" size="sm" className="hover-scale bg-blue-50 hover:bg-blue-100 text-blue-600 h-8 w-8 p-0">
                       <Eye className="w-4 h-4" />
                     </Button>
                   </Link>
                   <PermissionGuard permission="canManageProjects" fallback={null}>
                     <Link href={`/projects/${project.id}/edit`}>
-                      <Button variant="ghost" size="sm" className="hover-scale bg-green-50 hover:bg-green-100 text-green-600">
+                      <Button variant="ghost" size="sm" className="hover-scale bg-green-50 hover:bg-green-100 text-green-600 h-8 w-8 p-0">
                         <Edit className="w-4 h-4" />
                       </Button>
                     </Link>
@@ -457,74 +472,80 @@ export default function ProjectsPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteProject(project.id)}
-                      className="hover-scale bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700"
+                      className="hover-scale bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 h-8 w-8 p-0"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </PermissionGuard>
                 </div>
               </div>
-              <div className="flex gap-2 mt-2">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+              <div className="flex gap-2 mt-3">
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(project.status)}`}>
                   {project.status}
                 </span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(project.priority)}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getPriorityColor(project.priority)}`}>
                   {project.priority}
                 </span>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+              <p className="text-gray-600 text-sm mb-5 line-clamp-3 leading-relaxed">
                 {project.description || '설명이 없습니다.'}
               </p>
               
-              <div className="space-y-3">
-                {/* 진행률 */}
+              <div className="space-y-4">
+                {/* 진행률 - 더 큰 크기 */}
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>진행률</span>
-                    <span>{project.progress}%</span>
+                  <div className="flex justify-between text-sm mb-2 font-medium">
+                    <span className="text-gray-700">진행률</span>
+                    <span className="text-gray-800 font-bold">{project.progress}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-200 rounded-full h-3">
                     <div
-                      className={`h-2 rounded-full ${getProgressColor(project.progress)}`}
+                      className={`h-3 rounded-full transition-all duration-500 ${getProgressColor(project.progress)}`}
                       style={{ width: `${project.progress}%` }}
                     ></div>
                   </div>
                 </div>
 
-                {/* 프로젝트 정보 */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-gray-400" />
-                    <span>{project._count?.members || 0}명</span>
+                {/* 프로젝트 정보 - 더 큰 아이콘과 텍스트 */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
+                    <Users className="w-5 h-5 text-blue-500" />
+                    <span className="text-sm font-medium">{project._count?.members || 0}명</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    <span>{project._count?.tasks || 0}개 작업</span>
+                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
+                    <Calendar className="w-5 h-5 text-green-500" />
+                    <span className="text-sm font-medium">{project._count?.tasks || 0}개 작업</span>
                   </div>
                 </div>
 
                 {/* 고객사 정보 */}
                 {project.client && (
-                  <div className="text-sm text-gray-600">
-                    <strong>고객사:</strong> {project.client.name}
+                  <div className="bg-blue-50 rounded-lg p-3">
+                    <div className="text-sm text-blue-800">
+                      <strong>고객사:</strong> {project.client.name}
+                    </div>
                   </div>
                 )}
 
                 {/* 일정 정보 */}
                 {project.start_date && project.end_date && (
-                  <div className="text-sm text-gray-600">
-                    <div><strong>시작:</strong> {new Date(project.start_date).toLocaleDateString()}</div>
-                    <div><strong>종료:</strong> {new Date(project.end_date).toLocaleDateString()}</div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-700">
+                    <div className="flex justify-between">
+                      <span><strong>시작:</strong> {new Date(project.start_date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span><strong>종료:</strong> {new Date(project.end_date).toLocaleDateString()}</span>
+                    </div>
                   </div>
                 )}
 
                 {/* 예산 정보 */}
                 {project.budget_amount && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <DollarSign className="w-4 h-4 text-gray-400" />
-                    <span>예산: {project.budget_amount.toLocaleString()} {project.currency}</span>
+                  <div className="flex items-center gap-2 bg-green-50 rounded-lg p-3">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    <span className="text-sm font-medium text-green-800">예산: {project.budget_amount.toLocaleString()} {project.currency}</span>
                   </div>
                 )}
               </div>
@@ -533,15 +554,15 @@ export default function ProjectsPage() {
         ))}
       </div>
 
-      {/* 페이지네이션 */}
-      {pagination.totalPages > 1 && (
-        <div className="flex justify-center mt-12">
-          <div className="flex gap-3 bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-medium">
+      {/* 페이지네이션 - 컴팩트 버전 */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex justify-center mt-6">
+          <div className="flex gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-2 shadow-sm">
             <Button
               variant="outline"
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page === 1}
-              className="hover-lift"
+              className="hover-lift h-8 px-3 text-sm"
             >
               이전
             </Button>
@@ -550,7 +571,7 @@ export default function ProjectsPage() {
                 key={page}
                 variant={page === pagination.page ? "default" : "outline"}
                 onClick={() => handlePageChange(page)}
-                className={page === pagination.page ? "btn-modern bg-gradient-to-r from-blue-600 to-purple-600" : "hover-lift"}
+                className={page === pagination.page ? "btn-modern bg-gradient-to-r from-blue-600 to-purple-600 h-8 px-3 text-sm" : "hover-lift h-8 px-3 text-sm"}
               >
                 {page}
               </Button>
@@ -559,7 +580,7 @@ export default function ProjectsPage() {
               variant="outline"
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={pagination.page === pagination.totalPages}
-              className="hover-lift"
+              className="hover-lift h-8 px-3 text-sm"
             >
               다음
             </Button>
@@ -567,17 +588,17 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {/* 빈 상태 */}
+      {/* 빈 상태 - 컴팩트 버전 */}
       {projects.length === 0 && !loading && (
-        <div className="text-center py-20 fade-in">
-          <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-soft">
-            <Calendar className="w-12 h-12 text-blue-600" />
+        <div className="text-center py-12 fade-in">
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-soft">
+            <Calendar className="w-8 h-8 text-blue-600" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-3">프로젝트가 없습니다</h3>
-          <p className="text-gray-600 mb-8 text-lg">새 프로젝트를 생성하여 시작하세요.</p>
+          <h3 className="text-xl font-bold text-gray-800 mb-2">프로젝트가 없습니다</h3>
+          <p className="text-gray-600 mb-6">새 프로젝트를 생성하여 시작하세요.</p>
           <Link href="/projects/new">
-            <Button className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large h-12 px-8">
-              <Plus className="w-5 h-5 mr-2" />
+            <Button className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large h-10 px-6 text-sm">
+              <Plus className="w-4 h-4 mr-2" />
               새 프로젝트 생성
             </Button>
           </Link>
