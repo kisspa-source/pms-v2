@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAlert, useConfirm } from '@/components/ui/alert-dialog';
 
 interface TaskEditModalProps {
   isOpen: boolean;
@@ -42,6 +43,8 @@ export default function TaskEditModal({
 
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { showAlert, AlertComponent } = useAlert();
+  const { showConfirm, ConfirmComponent } = useConfirm();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -98,7 +101,7 @@ export default function TaskEditModal({
     e.preventDefault();
     
     if (!task || !formData.title) {
-      alert('제목은 필수입니다.');
+      showAlert('제목은 필수입니다.', 'warning');
       return;
     }
 
@@ -122,12 +125,12 @@ export default function TaskEditModal({
         throw new Error(error.error || '작업 수정에 실패했습니다');
       }
 
-      alert('작업이 성공적으로 수정되었습니다.');
+      showAlert('작업이 성공적으로 수정되었습니다.', 'success');
       handleClose();
       onTaskUpdated();
     } catch (error) {
       console.error('작업 수정 오류:', error);
-      alert(error instanceof Error ? error.message : '작업 수정에 실패했습니다');
+      showAlert(error instanceof Error ? error.message : '작업 수정에 실패했습니다', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -149,12 +152,12 @@ export default function TaskEditModal({
         throw new Error(error.error || '작업 삭제에 실패했습니다');
       }
 
-      alert('작업이 성공적으로 삭제되었습니다.');
+      showAlert('작업이 성공적으로 삭제되었습니다.', 'success');
       handleClose();
       onTaskDeleted();
     } catch (error) {
       console.error('작업 삭제 오류:', error);
-      alert(error instanceof Error ? error.message : '작업 삭제에 실패했습니다');
+      showAlert(error instanceof Error ? error.message : '작업 삭제에 실패했습니다', 'error');
     } finally {
       setIsSubmitting(false);
       setShowDeleteConfirm(false);
@@ -409,6 +412,8 @@ export default function TaskEditModal({
           </Card>
         </div>
       )}
+      <AlertComponent />
+      <ConfirmComponent />
     </div>
   );
 }

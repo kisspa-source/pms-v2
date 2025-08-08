@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { input } from '@/components/ui/input';
 import { useSession } from 'next-auth/react';
 import { useSocket } from '@/hooks/useSocket';
+import { useAlert, useConfirm } from '@/components/ui/alert-dialog';
 
 interface Comment {
   id: string;
@@ -36,6 +37,8 @@ export default function CommentSection({ projectId, taskId }: CommentSectionProp
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [loading, setLoading] = useState(true);
+  const { showAlert, AlertComponent } = useAlert();
+  const { showConfirm, ConfirmComponent } = useConfirm();
 
   // 댓글 목록 조회
   const fetchComments = async () => {
@@ -119,11 +122,11 @@ export default function CommentSection({ projectId, taskId }: CommentSectionProp
         // 실시간으로 이미 추가되었으므로 다시 조회하지 않음
       } else {
         const error = await response.json();
-        alert(error.error || '댓글 작성에 실패했습니다.');
+        showAlert(error.error || '댓글 작성에 실패했습니다.', 'error');
       }
     } catch (error) {
       console.error('댓글 작성 오류:', error);
-      alert('댓글 작성 중 오류가 발생했습니다.');
+      showAlert('댓글 작성 중 오류가 발생했습니다.', 'error');
     }
   };
 
@@ -151,11 +154,11 @@ export default function CommentSection({ projectId, taskId }: CommentSectionProp
         fetchComments();
       } else {
         const error = await response.json();
-        alert(error.error || '답글 작성에 실패했습니다.');
+        showAlert(error.error || '답글 작성에 실패했습니다.', 'error');
       }
     } catch (error) {
       console.error('답글 작성 오류:', error);
-      alert('답글 작성 중 오류가 발생했습니다.');
+      showAlert('답글 작성 중 오류가 발생했습니다.', 'error');
     }
   };
 
@@ -180,19 +183,19 @@ export default function CommentSection({ projectId, taskId }: CommentSectionProp
         fetchComments();
       } else {
         const error = await response.json();
-        alert(error.error || '댓글 수정에 실패했습니다.');
+        showAlert(error.error || '댓글 수정에 실패했습니다.', 'error');
       }
     } catch (error) {
       console.error('댓글 수정 오류:', error);
-      alert('댓글 수정 중 오류가 발생했습니다.');
+      showAlert('댓글 수정 중 오류가 발생했습니다.', 'error');
     }
   };
 
   // 댓글 삭제
   const handleDeleteComment = async (commentId: string) => {
-    if (!confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
-      return;
-    }
+    showConfirm(
+      '정말로 이 댓글을 삭제하시겠습니까?',
+      async () => {
 
     try {
       const response = await fetch(`/api/comments/${commentId}`, {
@@ -203,12 +206,14 @@ export default function CommentSection({ projectId, taskId }: CommentSectionProp
         fetchComments();
       } else {
         const error = await response.json();
-        alert(error.error || '댓글 삭제에 실패했습니다.');
+        showAlert(error.error || '댓글 삭제에 실패했습니다.', 'error');
       }
     } catch (error) {
       console.error('댓글 삭제 오류:', error);
-      alert('댓글 삭제 중 오류가 발생했습니다.');
+      showAlert('댓글 삭제 중 오류가 발생했습니다.', 'error');
     }
+      }
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -364,5 +369,8 @@ export default function CommentSection({ projectId, taskId }: CommentSectionProp
         )}
       </div>
     </Card>
+    
+    <AlertComponent />
+    <ConfirmComponent />
   );
 } 

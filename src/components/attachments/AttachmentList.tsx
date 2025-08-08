@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useAlert, useConfirm } from '@/components/ui/alert-dialog';
 
 interface Attachment {
   id: string;
@@ -27,6 +28,8 @@ interface AttachmentListProps {
 export default function AttachmentList({ projectId, taskId, onDelete }: AttachmentListProps) {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
+  const { showAlert, AlertComponent } = useAlert();
+  const { showConfirm, ConfirmComponent } = useConfirm();
 
   // 첨부파일 목록 조회
   const fetchAttachments = async () => {
@@ -52,9 +55,9 @@ export default function AttachmentList({ projectId, taskId, onDelete }: Attachme
   }, [projectId, taskId]);
 
   const handleDelete = async (attachmentId: string) => {
-    if (!confirm('정말로 이 파일을 삭제하시겠습니까?')) {
-      return;
-    }
+    showConfirm(
+      '정말로 이 파일을 삭제하시겠습니까?',
+      async () => {
 
     try {
       const response = await fetch(`/api/attachments/${attachmentId}`, {
@@ -66,12 +69,14 @@ export default function AttachmentList({ projectId, taskId, onDelete }: Attachme
         onDelete?.(attachmentId);
       } else {
         const error = await response.json();
-        alert(error.error || '파일 삭제에 실패했습니다.');
+        showAlert(error.error || '파일 삭제에 실패했습니다.', 'error');
       }
     } catch (error) {
       console.error('파일 삭제 오류:', error);
-      alert('파일 삭제 중 오류가 발생했습니다.');
+      showAlert('파일 삭제 중 오류가 발생했습니다.', 'error');
     }
+      }
+    );
   };
 
   const formatFileSize = (bytes: number) => {
@@ -178,5 +183,8 @@ export default function AttachmentList({ projectId, taskId, onDelete }: Attachme
         </div>
       )}
     </Card>
+    
+    <AlertComponent />
+    <ConfirmComponent />
   );
 } 

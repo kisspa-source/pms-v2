@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { input } from '@/components/ui/input';
 import { label } from '@/components/ui/label';
+import { useAlert, useConfirm } from '@/components/ui/alert-dialog';
 
 interface TimeLog {
   id: string;
@@ -39,6 +40,8 @@ interface TimeLogListProps {
 export default function TimeLogList({ projectId, taskId, userId, onEdit, onDelete }: TimeLogListProps) {
   const [timeLogs, setTimeLogs] = useState<TimeLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const { showAlert, AlertComponent } = useAlert();
+  const { showConfirm, ConfirmComponent } = useConfirm();
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
@@ -76,9 +79,9 @@ export default function TimeLogList({ projectId, taskId, userId, onEdit, onDelet
   }, [filters]);
 
   const handleDelete = async (timeLogId: string) => {
-    if (!confirm('정말로 이 시간 로그를 삭제하시겠습니까?')) {
-      return;
-    }
+    showConfirm(
+      '정말로 이 시간 로그를 삭제하시겠습니까?',
+      async () => {
 
     try {
       const response = await fetch(`/api/time-logs/${timeLogId}`, {
@@ -90,12 +93,14 @@ export default function TimeLogList({ projectId, taskId, userId, onEdit, onDelet
         onDelete?.(timeLogId);
       } else {
         const error = await response.json();
-        alert(error.error || '시간 로그 삭제에 실패했습니다.');
+        showAlert(error.error || '시간 로그 삭제에 실패했습니다.', 'error');
       }
     } catch (error) {
       console.error('시간 로그 삭제 오류:', error);
-      alert('시간 로그 삭제 중 오류가 발생했습니다.');
+      showAlert('시간 로그 삭제 중 오류가 발생했습니다.', 'error');
     }
+      }
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -221,6 +226,9 @@ export default function TimeLogList({ projectId, taskId, userId, onEdit, onDelet
           </div>
         )}
       </Card>
+      
+      <AlertComponent />
+      <ConfirmComponent />
     </div>
   );
 } 

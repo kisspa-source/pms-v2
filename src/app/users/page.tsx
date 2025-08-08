@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { UserRole } from '@/lib/auth-guards'
 import PermissionGuard from '@/components/auth/PermissionGuard'
+import { useAlert, useConfirm } from '@/components/ui/alert-dialog'
 
 interface User {
   id: string
@@ -48,6 +49,13 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState('')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+
+  // Alert/Confirm hooks
+  const { showAlert, AlertComponent } = useAlert()
+  const { showConfirm, ConfirmComponent } = useConfirm()
 
   // 폼 상태
   const [formData, setFormData] = useState({
@@ -90,7 +98,7 @@ export default function UsersPage() {
       setPagination(data.pagination)
     } catch (error) {
       console.error('사용자 목록 조회 오류:', error)
-      alert(error instanceof Error ? error.message : '사용자 목록을 불러오는데 실패했습니다.')
+      showAlert(error instanceof Error ? error.message : '사용자 목록을 불러오는데 실패했습니다.', 'error')
     } finally {
       setLoading(false)
     }
@@ -127,13 +135,13 @@ export default function UsersPage() {
         throw new Error(error.error || '사용자 생성에 실패했습니다.')
       }
 
-      alert('사용자가 성공적으로 생성되었습니다.')
+      showAlert('사용자가 성공적으로 생성되었습니다.', 'success')
       setShowCreateForm(false)
       setFormData({ name: '', email: '', password: '', role: UserRole.DEVELOPER, organizationId: '' })
       fetchUsers()
     } catch (error) {
       console.error('사용자 생성 오류:', error)
-      alert(error instanceof Error ? error.message : '사용자 생성에 실패했습니다.')
+      showAlert(error instanceof Error ? error.message : '사용자 생성에 실패했습니다.', 'error')
     }
   }
 
@@ -160,35 +168,44 @@ export default function UsersPage() {
         throw new Error(error.error || '사용자 수정에 실패했습니다.')
       }
 
-      alert('사용자 정보가 성공적으로 수정되었습니다.')
+      showAlert('사용자 정보가 성공적으로 수정되었습니다.', 'success')
       setEditingUser(null)
       setFormData({ name: '', email: '', password: '', role: UserRole.DEVELOPER, organizationId: '' })
       fetchUsers()
     } catch (error) {
       console.error('사용자 수정 오류:', error)
-      alert(error instanceof Error ? error.message : '사용자 정보를 수정하는 중 오류가 발생했습니다.')
+      showAlert(error instanceof Error ? error.message : '사용자 정보를 수정하는 중 오류가 발생했습니다.', 'error')
     }
   }
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm('정말로 이 사용자를 삭제하시겠습니까?')) return
+    showConfirm(
+      '정말로 이 사용자를 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.',
+      async () => {
+        try {
+          const response = await fetch(`/api/users/${userId}`, {
+            method: 'DELETE'
+          })
 
-    try {
-      const response = await fetch(`/api/users/${userId}`, {
-        method: 'DELETE'
-      })
+          if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.error || '사용자 삭제에 실패했습니다.')
+          }
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || '사용자 삭제에 실패했습니다.')
+          showAlert('사용자가 성공적으로 삭제되었습니다.', 'success')
+          fetchUsers()
+        } catch (error) {
+          console.error('사용자 삭제 오류:', error)
+          showAlert(error instanceof Error ? error.message : '사용자 삭제에 실패했습니다.', 'error')
+        }
+      },
+      {
+        type: 'error',
+        title: '사용자 삭제',
+        confirmText: '삭제',
+        cancelText: '취소'
       }
-
-      alert('사용자가 성공적으로 삭제되었습니다.')
-      fetchUsers()
-    } catch (error) {
-      console.error('사용자 삭제 오류:', error)
-      alert(error instanceof Error ? error.message : '사용자 삭제에 실패했습니다.')
-    }
+    )
   }
 
   const startEdit = (user: User) => {
@@ -200,6 +217,69 @@ export default function UsersPage() {
       role: user.role,
       organizationId: user.organizationId || ''
     })
+  }
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await fetch('/api/users/template')
+      if (!response.ok) {
+        throw new Error('템플릿 다운로드에 실패했습니다.')
+      }
+      
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'user_upload_template.xlsx'
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('템플릿 다운로드 오류:', error)
+      showAlert('템플릿 다운로드에 실패했습니다.', 'error')
+    }
+  }
+
+  const handleFileUpload = async () => {
+    if (!uploadFile) {
+      showAlert('파일을 선택해주세요.', 'warning')
+      return
+    }
+
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', uploadFile)
+
+      const response = await fetch('/api/users/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || '업로드에 실패했습니다.')
+      }
+
+      showAlert(result.message, 'success')
+      
+      if (result.results.errors.length > 0) {
+        const errorMessage = result.results.errors.slice(0, 5).join('\n')
+        const remainingErrors = result.results.errors.length - 5
+        showAlert(`오류 내역:\n${errorMessage}${remainingErrors > 0 ? `\n... 외 ${remainingErrors}건` : ''}`, 'warning', '업로드 결과')
+      }
+
+      setShowUploadModal(false)
+      setUploadFile(null)
+      fetchUsers() // 목록 새로고침
+    } catch (error) {
+      console.error('업로드 오류:', error)
+      showAlert(error instanceof Error ? error.message : '업로드에 실패했습니다.', 'error')
+    } finally {
+      setUploading(false)
+    }
   }
 
   if (status === 'loading') {
@@ -220,9 +300,25 @@ export default function UsersPage() {
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold">사용자 관리</h1>
-            <Button onClick={() => setShowCreateForm(true)}>
-              새 사용자 추가
-            </Button>
+            <div className="flex gap-3">
+              <button
+                onClick={handleDownloadTemplate}
+                className="flex items-center gap-2 h-10 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md text-sm font-medium transition-colors duration-200 shadow-sm hover:shadow-md"
+              >
+                <span className="text-sm">📊</span>
+                엑셀 양식 다운로드
+              </button>
+              <button
+                onClick={() => setShowUploadModal(true)}
+                className="flex items-center gap-2 h-10 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm font-medium transition-colors duration-200 shadow-sm hover:shadow-md"
+              >
+                <span className="text-sm">📊</span>
+                엑셀 업로드
+              </button>
+              <Button onClick={() => setShowCreateForm(true)}>
+                새 사용자 추가
+              </Button>
+            </div>
           </div>
 
           {/* 검색 및 필터 */}
@@ -321,6 +417,66 @@ export default function UsersPage() {
             </CardContent>
           </Card>
 
+          {/* 엑셀 업로드 모달 */}
+          {showUploadModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <Card className="w-full max-w-md">
+                <CardHeader>
+                  <CardTitle>엑셀 파일 업로드</CardTitle>
+                  <CardDescription>
+                    엑셀 파일을 업로드하여 사용자를 일괄 등록할 수 있습니다.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="excel-file">엑셀 파일 선택</Label>
+                    <Input
+                      id="excel-file"
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                      disabled={uploading}
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      .xlsx 또는 .xls 파일만 업로드 가능합니다.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-blue-50 p-3 rounded-md">
+                    <p className="text-sm text-blue-800">
+                      <strong>업로드 전 확인사항:</strong>
+                    </p>
+                    <ul className="text-sm text-blue-700 mt-1 list-disc list-inside">
+                      <li>엑셀 양식을 다운로드하여 형식을 확인하세요</li>
+                      <li>필수 컬럼: 이름, 이메일, 비밀번호, 역할</li>
+                      <li>중복된 이메일은 업로드되지 않습니다</li>
+                    </ul>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleFileUpload} 
+                      disabled={!uploadFile || uploading}
+                      className="flex-1"
+                    >
+                      {uploading ? '업로드 중...' : '업로드'}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setShowUploadModal(false)
+                        setUploadFile(null)
+                      }}
+                      disabled={uploading}
+                    >
+                      취소
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {/* 생성/수정 폼 모달 */}
           {(showCreateForm || editingUser) && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -410,6 +566,10 @@ export default function UsersPage() {
               </Card>
             </div>
           )}
+
+          {/* Alert/Confirm Components */}
+          <AlertComponent />
+          <ConfirmComponent />
         </div>
       </MainLayout>
     </PermissionGuard>

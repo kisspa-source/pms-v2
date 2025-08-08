@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAlert } from '@/components/ui/alert-dialog';
 
 interface TaskCreateModalProps {
   isOpen: boolean;
@@ -45,6 +46,7 @@ export default function TaskCreateModal({
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showAlert, AlertComponent } = useAlert();
 
   // 프로젝트 목록 조회
   const fetchProjects = async () => {
@@ -109,7 +111,7 @@ export default function TaskCreateModal({
     e.preventDefault();
     
     if (!formData.project_id || !formData.title) {
-      alert('프로젝트와 제목은 필수입니다.');
+      showAlert('프로젝트와 제목은 필수입니다.', 'warning');
       return;
     }
 
@@ -132,12 +134,12 @@ export default function TaskCreateModal({
         throw new Error(error.error || '작업 생성에 실패했습니다');
       }
 
-      alert('작업이 성공적으로 생성되었습니다.');
+      showAlert('작업이 성공적으로 생성되었습니다.', 'success');
       handleClose();
       onTaskCreated();
     } catch (error) {
       console.error('작업 생성 오류:', error);
-      alert(error instanceof Error ? error.message : '작업 생성에 실패했습니다');
+      showAlert(error instanceof Error ? error.message : '작업 생성에 실패했습니다', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -342,6 +344,7 @@ export default function TaskCreateModal({
           )}
         </CardContent>
       </Card>
+      <AlertComponent />
     </div>
   );
 }

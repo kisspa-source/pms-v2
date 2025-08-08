@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { input } from '@/components/ui/input';
 import { label } from '@/components/ui/label';
+import { useAlert } from '@/components/ui/alert-dialog';
 
 interface TimeLogFormProps {
   projectId?: string;
@@ -27,6 +28,7 @@ export default function TimeLogForm({ projectId, taskId, onSuccess, onCancel }: 
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
+  const { showAlert, AlertComponent } = useAlert();
   const [formData, setFormData] = useState({
     projectId: projectId || '',
     taskId: taskId || '',
@@ -107,11 +109,11 @@ export default function TimeLogForm({ projectId, taskId, onSuccess, onCancel }: 
         onSuccess?.();
       } else {
         const error = await response.json();
-        alert(error.error || '시간 로그 생성에 실패했습니다.');
+        showAlert(error.error || '시간 로그 생성에 실패했습니다.', 'error');
       }
     } catch (error) {
       console.error('시간 로그 생성 오류:', error);
-      alert('시간 로그 생성 중 오류가 발생했습니다.');
+      showAlert('시간 로그 생성 중 오류가 발생했습니다.', 'error');
     } finally {
       setLoading(false);
     }
@@ -250,5 +252,7 @@ export default function TimeLogForm({ projectId, taskId, onSuccess, onCancel }: 
         </div>
       </form>
     </Card>
+    
+    <AlertComponent />
   );
 } 

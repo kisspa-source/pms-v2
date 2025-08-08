@@ -12,6 +12,7 @@ import { ProjectType, Priority } from '@/types/project'
 import { ArrowLeft, Save, Building2, Users, Calendar, DollarSign, Target, FileText, Settings, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import MainLayout from '@/components/layout/MainLayout'
+import { useAlert } from '@/components/ui/alert-dialog'
 
 interface Client {
   id: string
@@ -31,6 +32,7 @@ export default function NewProjectPage() {
   const [loading, setLoading] = useState(false)
   const [clients, setClients] = useState<Client[]>([])
   const [organizations, setOrganizations] = useState<Organization[]>([])
+  const { showAlert, AlertComponent } = useAlert()
   const [formData, setFormData] = useState({
     organization_id: '',
     client_id: '',
@@ -86,7 +88,7 @@ export default function NewProjectPage() {
     e.preventDefault()
     
     if (!formData.name || !formData.client_id || !formData.organization_id) {
-      alert('프로젝트명, 고객사, 조직은 필수입니다.')
+      showAlert('프로젝트명, 고객사, 조직은 필수입니다.', 'warning')
       return
     }
 
@@ -115,7 +117,7 @@ export default function NewProjectPage() {
       router.push(`/projects/${newProject.id}`)
     } catch (error) {
       console.error('프로젝트 생성 오류:', error)
-      alert(error instanceof Error ? error.message : '프로젝트 생성 중 오류가 발생했습니다.')
+      showAlert(error instanceof Error ? error.message : '프로젝트 생성 중 오류가 발생했습니다.', 'error')
     } finally {
       setLoading(false)
     }
@@ -527,6 +529,8 @@ export default function NewProjectPage() {
           </CardContent>
         </Card>
       </div>
+      
+      <AlertComponent />
       </div>
     </MainLayout>
   )

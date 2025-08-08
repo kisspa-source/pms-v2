@@ -11,6 +11,7 @@ import { Client, ClientStatus } from '@/types/project'
 import { Plus, Search, Filter, Eye, Edit, Trash2, Building, Mail, Phone, Globe, Users, DollarSign } from 'lucide-react'
 import Link from 'next/link'
 import MainLayout from '@/components/layout/MainLayout'
+import { useAlert, useConfirm } from '@/components/ui/alert-dialog'
 
 interface ClientListResponse {
   clients: Client[]
@@ -30,6 +31,8 @@ export default function ClientsPage() {
   const { data: session } = useSession()
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
+  const { showAlert, AlertComponent } = useAlert()
+  const { showConfirm, ConfirmComponent } = useConfirm()
   const [searchTerm, setSearchTerm] = useState('')
   const [filters, setFilters] = useState({
     status: '',
@@ -100,21 +103,30 @@ export default function ClientsPage() {
 
   // 고객사 삭제
   const handleDeleteClient = async (clientId: string) => {
-    if (!confirm('정말로 이 고객사를 삭제하시겠습니까?')) return
+    showConfirm(
+      '정말로 이 고객사를 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.',
+      async () => {
+        try {
+          const response = await fetch(`/api/clients/${clientId}`, {
+            method: 'DELETE'
+          })
 
-    try {
-      const response = await fetch(`/api/clients/${clientId}`, {
-        method: 'DELETE'
-      })
+          if (!response.ok) throw new Error('고객사 삭제에 실패했습니다.')
 
-      if (!response.ok) throw new Error('고객사 삭제에 실패했습니다.')
-
-      // 목록 새로고침
-      fetchClients()
-    } catch (error) {
-      console.error('고객사 삭제 오류:', error)
-      alert('고객사 삭제 중 오류가 발생했습니다.')
-    }
+          showAlert('고객사가 성공적으로 삭제되었습니다.', 'success')
+          fetchClients()
+        } catch (error) {
+          console.error('고객사 삭제 오류:', error)
+          showAlert('고객사 삭제 중 오류가 발생했습니다.', 'error')
+        }
+      },
+      {
+        type: 'error',
+        title: '고객사 삭제',
+        confirmText: '삭제',
+        cancelText: '취소'
+      }
+    )
   }
 
   // 상태별 색상
@@ -443,6 +455,10 @@ export default function ClientsPage() {
             </Link>
           </div>
         )}
+
+        {/* Alert/Confirm Components */}
+        <AlertComponent />
+        <ConfirmComponent />
       </div>
     </MainLayout>
   )

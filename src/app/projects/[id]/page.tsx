@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Loading } from '@/components/ui/loading'
 import { Project, ProjectStatus, Priority } from '@/types/project'
+import { useAlert, useConfirm } from '@/components/ui/alert-dialog'
 import { 
   ArrowLeft, 
   Edit, 
@@ -107,6 +108,8 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<ProjectDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
+  const { showAlert, AlertComponent } = useAlert()
+  const { showConfirm, ConfirmComponent } = useConfirm()
 
   const projectId = params.id as string
 
@@ -128,7 +131,7 @@ export default function ProjectDetailPage() {
       setProject(data)
     } catch (error) {
       console.error('프로젝트 상세 조회 오류:', error)
-      alert('프로젝트 정보를 불러오는데 실패했습니다.')
+      showAlert('프로젝트 정보를 불러오는데 실패했습니다.', 'error')
     } finally {
       setLoading(false)
     }
@@ -136,7 +139,9 @@ export default function ProjectDetailPage() {
 
   // 프로젝트 상태 변경
   const handleStatusChange = async (newStatus: ProjectStatus) => {
-    if (!confirm(`프로젝트 상태를 ${newStatus}로 변경하시겠습니까?`)) return
+    showConfirm(
+      `프로젝트 상태를 ${newStatus}로 변경하시겠습니까?`,
+      async () => {
 
     try {
       const response = await fetch(`/api/projects/${projectId}/status`, {
@@ -149,10 +154,11 @@ export default function ProjectDetailPage() {
 
       // 프로젝트 정보 새로고침
       fetchProjectDetail()
-    } catch (error) {
-      console.error('상태 변경 오류:', error)
-      alert('상태 변경에 실패했습니다.')
-    }
+      } catch (error) {
+        console.error('상태 변경 오류:', error)
+        showAlert('상태 변경에 실패했습니다.', 'error')
+      }
+    })
   }
 
   // 상태별 색상
@@ -295,19 +301,18 @@ export default function ProjectDetailPage() {
               </Button>
             </Link>
           </div>
-        </div>        {/*
- 컴팩트한 통계 카드 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+        </div>        {/* 컴팩트한 통계 카드 - 높이 50% 축소 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
           {/* 상태 */}
           <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-blue-100 rounded-lg">
-                  <BarChart3 className="w-4 h-4 text-blue-600" />
+            <CardContent className="p-2">
+              <div className="flex items-center gap-1.5">
+                <div className="p-1 bg-blue-100 rounded-md">
+                  <BarChart3 className="w-3 h-3 text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-gray-600 mb-1">상태</div>
-                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+                  <div className="text-xs text-gray-600 mb-0.5">상태</div>
+                  <div className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
                     {project.status}
                   </div>
                 </div>
@@ -317,13 +322,13 @@ export default function ProjectDetailPage() {
 
           {/* 진행률 */}
           <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-green-100 rounded-lg">
-                  <Target className="w-4 h-4 text-green-600" />
+            <CardContent className="p-2">
+              <div className="flex items-center gap-1.5">
+                <div className="p-1 bg-green-100 rounded-md">
+                  <Target className="w-3 h-3 text-green-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-gray-600 mb-1">진행률</div>
+                  <div className="text-xs text-gray-600 mb-0.5">진행률</div>
                   <div className="text-sm font-bold text-gray-800">{project.progress}%</div>
                 </div>
               </div>
@@ -332,13 +337,13 @@ export default function ProjectDetailPage() {
 
           {/* 팀원 수 */}
           <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-purple-100 rounded-lg">
-                  <Users className="w-4 h-4 text-purple-600" />
+            <CardContent className="p-2">
+              <div className="flex items-center gap-1.5">
+                <div className="p-1 bg-purple-100 rounded-md">
+                  <Users className="w-3 h-3 text-purple-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-gray-600 mb-1">팀원</div>
+                  <div className="text-xs text-gray-600 mb-0.5">팀원</div>
                   <div className="text-sm font-bold text-gray-800">{project._count.members}명</div>
                 </div>
               </div>
@@ -347,13 +352,13 @@ export default function ProjectDetailPage() {
 
           {/* 작업 수 */}
           <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-orange-100 rounded-lg">
-                  <CheckCircle className="w-4 h-4 text-orange-600" />
+            <CardContent className="p-2">
+              <div className="flex items-center gap-1.5">
+                <div className="p-1 bg-orange-100 rounded-md">
+                  <CheckCircle className="w-3 h-3 text-orange-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-gray-600 mb-1">작업</div>
+                  <div className="text-xs text-gray-600 mb-0.5">작업</div>
                   <div className="text-sm font-bold text-gray-800">{project._count.tasks}개</div>
                 </div>
               </div>
@@ -362,13 +367,13 @@ export default function ProjectDetailPage() {
 
           {/* 예산 */}
           <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-yellow-100 rounded-lg">
-                  <DollarSign className="w-4 h-4 text-yellow-600" />
+            <CardContent className="p-2">
+              <div className="flex items-center gap-1.5">
+                <div className="p-1 bg-yellow-100 rounded-md">
+                  <DollarSign className="w-3 h-3 text-yellow-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-gray-600 mb-1">예산</div>
+                  <div className="text-xs text-gray-600 mb-0.5">예산</div>
                   <div className="text-xs font-bold text-gray-800 truncate">
                     {project.budget_amount ? `${(project.budget_amount / 1000000).toFixed(0)}M` : '미정'}
                   </div>
@@ -379,13 +384,13 @@ export default function ProjectDetailPage() {
 
           {/* 일정 */}
           <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-red-100 rounded-lg">
-                  <Calendar className="w-4 h-4 text-red-600" />
+            <CardContent className="p-2">
+              <div className="flex items-center gap-1.5">
+                <div className="p-1 bg-red-100 rounded-md">
+                  <Calendar className="w-3 h-3 text-red-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-gray-600 mb-1">기간</div>
+                  <div className="text-xs text-gray-600 mb-0.5">기간</div>
                   <div className="text-xs font-bold text-gray-800">
                     {project.start_date && project.end_date 
                       ? `${Math.ceil((new Date(project.end_date).getTime() - new Date(project.start_date).getTime()) / (1000 * 60 * 60 * 24))}일`

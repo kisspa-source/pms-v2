@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useAlert, useConfirm } from '@/components/ui/alert-dialog';
 
 interface ProjectPhase {
   id: string;
@@ -52,6 +53,8 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
     errors: number;
     errorMessages: string[];
   } | null>(null);
+  const { showAlert, AlertComponent } = useAlert();
+  const { showConfirm, ConfirmComponent } = useConfirm();
 
   // 단계 상태 옵션
   const phaseStatuses = [
@@ -75,7 +78,7 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
   // 단계 추가
   const handleAddPhase = () => {
     if (!formData.name.trim()) {
-      alert('단계명을 입력해주세요.');
+      showAlert('단계명을 입력해주세요.', 'warning');
       return;
     }
 
@@ -96,7 +99,7 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
   // 단계 수정
   const handleUpdatePhase = (phaseId: string) => {
     if (!formData.name.trim()) {
-      alert('단계명을 입력해주세요.');
+      showAlert('단계명을 입력해주세요.', 'warning');
       return;
     }
 
@@ -143,9 +146,12 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
     
     confirmMessage += `\n\n이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?`;
     
-    if (window.confirm(confirmMessage)) {
-      onPhaseDelete(phase.id);
-    }
+    showConfirm(
+      confirmMessage,
+      () => {
+        onPhaseDelete(phase.id);
+      }
+    );
   };
 
   // 진행률 계산
@@ -181,9 +187,9 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
           const error = await response.json();
-          alert(error.error || '엑셀 양식 다운로드에 실패했습니다.');
+          showAlert(error.error || '엑셀 양식 다운로드에 실패했습니다.', 'error');
         } else {
-          alert(`엑셀 양식 다운로드에 실패했습니다. (상태: ${response.status})`);
+          showAlert(`엑셀 양식 다운로드에 실패했습니다. (상태: ${response.status})`, 'error');
         }
         return;
       }
@@ -192,7 +198,7 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
       
       // blob이 유효한지 확인
       if (blob.size === 0) {
-        alert('다운로드된 파일이 비어있습니다.');
+        showAlert('다운로드된 파일이 비어있습니다.', 'error');
         return;
       }
 
@@ -212,7 +218,7 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
       
     } catch (error) {
       console.error('엑셀 양식 다운로드 오류:', error);
-      alert('엑셀 양식 다운로드 중 오류가 발생했습니다.');
+      showAlert('엑셀 양식 다운로드 중 오류가 발생했습니다.', 'error');
     }
   };
 
@@ -223,7 +229,7 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
 
     // 파일 확장자 검증
     if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-      alert('엑셀 파일만 업로드 가능합니다.');
+      showAlert('엑셀 파일만 업로드 가능합니다.', 'warning');
       return;
     }
 
@@ -242,7 +248,7 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
       const result = await response.json();
 
       if (!response.ok) {
-        alert(result.error || '엑셀 업로드에 실패했습니다.');
+        showAlert(result.error || '엑셀 업로드에 실패했습니다.', 'error');
         if (result.details) {
           setUploadResult(result.details);
         }
@@ -254,12 +260,12 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
       // 성공한 경우 데이터 새로고침
       if (result.success > 0) {
         onPhasesReload();
-        alert(`${result.success}개의 단계가 성공적으로 등록되었습니다.${result.errors > 0 ? ` (${result.errors}개 오류)` : ''}`);
+        showAlert(`${result.success}개의 단계가 성공적으로 등록되었습니다.${result.errors > 0 ? ` (${result.errors}개 오류)` : ''}`, 'success');
       }
 
     } catch (error) {
       console.error('엑셀 업로드 오류:', error);
-      alert('엑셀 업로드 중 오류가 발생했습니다.');
+      showAlert('엑셀 업로드 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsUploading(false);
       // 파일 입력 초기화
@@ -268,6 +274,7 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
   };
 
   return (
+    <>
     <Card className="p-4">
       <div className="mb-4">
         <h3 className="text-lg font-semibold mb-2">프로젝트 단계 관리</h3>
@@ -602,5 +609,9 @@ export const ProjectPhaseManager: React.FC<ProjectPhaseManagerProps> = ({
         ))}
       </div>
     </Card>
+    
+    <AlertComponent />
+    <ConfirmComponent />
+    </>
   );
 }; 

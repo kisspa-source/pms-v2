@@ -12,6 +12,7 @@ import { Plus, Search, Filter, Eye, Edit, Trash2, Users, Calendar, DollarSign, S
 import Link from 'next/link'
 import MainLayout from '@/components/layout/MainLayout'
 import PermissionGuard from '@/components/auth/PermissionGuard'
+import { useAlert, useConfirm } from '@/components/ui/alert-dialog'
 
 interface ProjectListResponse {
   projects: Project[]
@@ -48,6 +49,8 @@ export default function ProjectsPage() {
     totalProjects: 0
   })
   const [showFilters, setShowFilters] = useState(false)
+  const { showAlert, AlertComponent } = useAlert()
+  const { showConfirm, ConfirmComponent } = useConfirm()
 
   // 프로젝트 목록 조회
   const fetchProjects = async (currentPage?: number) => {
@@ -144,30 +147,39 @@ export default function ProjectsPage() {
 
   // 프로젝트 삭제
   const handleDeleteProject = async (projectId: string) => {
-    if (!confirm('정말로 이 프로젝트를 삭제하시겠습니까?')) return
+    showConfirm(
+      '정말로 이 프로젝트를 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.',
+      async () => {
+        try {
+          const response = await fetch(`/api/projects/${projectId}`, {
+            method: 'DELETE'
+          })
 
-    try {
-      const response = await fetch(`/api/projects/${projectId}`, {
-        method: 'DELETE'
-      })
+          if (!response.ok) {
+            const errorData = await response.json()
+            if (response.status === 403) {
+              showAlert('프로젝트를 삭제할 권한이 없습니다.', 'error')
+            } else {
+              showAlert(errorData.error || '프로젝트 삭제에 실패했습니다.', 'error')
+            }
+            return
+          }
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        if (response.status === 403) {
-          alert('프로젝트를 삭제할 권한이 없습니다.')
-        } else {
-          alert(errorData.error || '프로젝트 삭제에 실패했습니다.')
+          // 목록 새로고침
+          fetchProjects()
+          showAlert('프로젝트가 성공적으로 삭제되었습니다.', 'success')
+        } catch (error) {
+          console.error('프로젝트 삭제 오류:', error)
+          showAlert('프로젝트 삭제 중 오류가 발생했습니다.', 'error')
         }
-        return
+      },
+      {
+        type: 'error',
+        title: '프로젝트 삭제',
+        confirmText: '삭제',
+        cancelText: '취소'
       }
-
-      // 목록 새로고침
-      fetchProjects()
-      alert('프로젝트가 성공적으로 삭제되었습니다.')
-    } catch (error) {
-      console.error('프로젝트 삭제 오류:', error)
-      alert('프로젝트 삭제 중 오류가 발생했습니다.')
-    }
+    )
   }
 
   // 상태별 색상
@@ -605,6 +617,10 @@ export default function ProjectsPage() {
         </div>
       )}
       </div>
+      
+      {/* Alert/Confirm Components */}
+      <AlertComponent />
+      <ConfirmComponent />
     </MainLayout>
   )
 } 

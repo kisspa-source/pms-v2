@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useAlert } from '@/components/ui/alert-dialog';
 
 interface FileUploadProps {
   projectId?: string;
@@ -28,6 +29,7 @@ export default function FileUpload({ projectId, taskId, onUploadSuccess }: FileU
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { showAlert, AlertComponent } = useAlert();
 
   const handleFileSelect = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -43,7 +45,7 @@ export default function FileUpload({ projectId, taskId, onUploadSuccess }: FileU
       onUploadSuccess?.();
     } catch (error) {
       console.error('파일 업로드 오류:', error);
-      alert('파일 업로드 중 오류가 발생했습니다.');
+      showAlert('파일 업로드 중 오류가 발생했습니다.', 'error');
     } finally {
       setUploading(false);
     }
@@ -147,5 +149,7 @@ export default function FileUpload({ projectId, taskId, onUploadSuccess }: FileU
         accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
       />
     </Card>
+    
+    <AlertComponent />
   );
 } 

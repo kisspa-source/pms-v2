@@ -12,6 +12,7 @@ import ResourceChart from '@/components/reports/ResourceChart';
 import CustomerSatisfactionChart from '@/components/reports/CustomerSatisfactionChart';
 import { generatePDFReport, formatCurrency, formatPercentage } from '@/lib/pdf-generator';
 import { format } from 'date-fns';
+import { useAlert } from '@/components/ui/alert-dialog';
 
 interface ProgressData {
   projectId: string;
@@ -85,6 +86,7 @@ export default function ReportsPage() {
   const [reportType, setReportType] = useState<'progress' | 'financial' | 'resource' | 'satisfaction'>('progress');
   const [startDate, setStartDate] = useState(format(new Date().setMonth(new Date().getMonth() - 1), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const { showAlert, AlertComponent } = useAlert();
 
   // 진행률 보고서 데이터 조회
   const { data: progressData, isLoading: progressLoading } = useQuery({
@@ -152,7 +154,7 @@ export default function ReportsPage() {
       await generatePDFReport(elementId, options);
     } catch (error) {
       console.error('PDF 생성 실패:', error);
-      alert('PDF 생성에 실패했습니다.');
+      showAlert('PDF 생성에 실패했습니다.', 'error');
     }
   };
 
@@ -490,6 +492,8 @@ export default function ReportsPage() {
           {reportType === 'satisfaction' && renderSatisfactionReport()}
         </>
       )}
+      
+      <AlertComponent />
     </div>
   );
 } 

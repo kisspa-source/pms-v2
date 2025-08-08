@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -11,6 +11,7 @@ import {
   useSensor,
   useSensors,
   closestCorners,
+  DragMoveEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -58,12 +59,15 @@ export default function KanbanBoard({
     DONE: [],
     BLOCKED: [],
   });
+  
+  const boardRef = useRef<HTMLDivElement>(null);
+  const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 드래그 앤 드롭 센서 설정
+  // 드래그 앤 드롭 센서 설정 - 더 민감하게 설정
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 3, // 더 짧은 거리로 드래그 시작
       },
     })
   );
@@ -84,6 +88,84 @@ export default function KanbanBoard({
 
     setColumns(newColumns);
   }, [tasks]);
+
+  // 자동 스크롤 함수
+  const startAutoScroll = useCallback((direction: 'left' | 'right' | 'up' | 'down', speed: number = 5) => {
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
+    }
+
+    autoScrollIntervalRef.current = setInterval(() => {
+      if (!boardRef.current) return;
+
+      const scrollContainer = boardRef.current;
+      
+      switch (direction) {
+        case 'left':
+          scrollContainer.scrollLeft -= speed;
+          break;
+        case 'right':
+          scrollContainer.scrollLeft += speed;
+          break;
+        case 'up':
+          scrollContainer.scrollTop -= speed;
+          break;
+        case 'down':
+          scrollContainer.scrollTop += speed;
+          break;
+      }
+    }, 16); // 60fps
+  }, []);
+
+  const stopAutoScroll = useCallback(() => {
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
+      autoScrollIntervalRef.current = null;
+    }
+  }, []);
+
+  // 드래그 이동 중 자동 스크롤 처리
+  const handleDragMove = useCallback((event: DragMoveEvent) => {
+    if (!boardRef.current) return;
+
+    const { clientX, clientY } = event.activatorEvent as PointerEvent;
+    const rect = boardRef.current.getBoundingClientRect();
+    
+    const scrollThreshold = 50; // 경계에서 50px 이내에서 스크롤 시작
+    const maxScrollSpeed = 10;
+    
+    // 수평 스크롤 처리
+    const leftDistance = clientX - rect.left;
+    const rightDistance = rect.right - clientX;
+    
+    if (leftDistance < scrollThreshold && boardRef.current.scrollLeft > 0) {
+      const speed = Math.max(1, maxScrollSpeed * (1 - leftDistance / scrollThreshold));
+      startAutoScroll('left', speed);
+    } else if (rightDistance < scrollThreshold) {
+      const maxScrollLeft = boardRef.current.scrollWidth - boardRef.current.clientWidth;
+      if (boardRef.current.scrollLeft < maxScrollLeft) {
+        const speed = Math.max(1, maxScrollSpeed * (1 - rightDistance / scrollThreshold));
+        startAutoScroll('right', speed);
+      }
+    } else {
+      stopAutoScroll();
+    }
+
+    // 수직 스크롤 처리 (필요한 경우)
+    const topDistance = clientY - rect.top;
+    const bottomDistance = rect.bottom - clientY;
+    
+    if (topDistance < scrollThreshold && boardRef.current.scrollTop > 0) {
+      const speed = Math.max(1, maxScrollSpeed * (1 - topDistance / scrollThreshold));
+      startAutoScroll('up', speed);
+    } else if (bottomDistance < scrollThreshold) {
+      const maxScrollTop = boardRef.current.scrollHeight - boardRef.current.clientHeight;
+      if (boardRef.current.scrollTop < maxScrollTop) {
+        const speed = Math.max(1, maxScrollSpeed * (1 - bottomDistance / scrollThreshold));
+        startAutoScroll('down', speed);
+      }
+    }
+  }, [startAutoScroll, stopAutoScroll]);
 
   // 드래그 시작
   const handleDragStart = (event: DragStartEvent) => {
@@ -127,6 +209,9 @@ export default function KanbanBoard({
   // 드래그 종료
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+
+    // 자동 스크롤 중지
+    stopAutoScroll();
 
     if (!over) {
       setActiveTask(null);
@@ -181,6 +266,13 @@ export default function KanbanBoard({
     console.log('작업 클릭:', task);
   };
 
+  // 컴포넌트 언마운트 시 자동 스크롤 정리
+  useEffect(() => {
+    return () => {
+      stopAutoScroll();
+    };
+  }, [stopAutoScroll]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -212,9 +304,13 @@ export default function KanbanBoard({
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
+        onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 h-[calc(100vh-200px)]">
+        <div 
+          ref={boardRef}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 h-[calc(100vh-200px)] overflow-auto scroll-smooth"
+        >
           {KANBAN_COLUMNS.map((column) => (
             <KanbanColumn
               key={column.id}
@@ -229,10 +325,15 @@ export default function KanbanBoard({
           ))}
         </div>
 
-        {/* 드래그 오버레이 */}
-        <DragOverlay>
+        {/* 드래그 오버레이 - 개선된 스타일 */}
+        <DragOverlay
+          dropAnimation={{
+            duration: 200,
+            easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+          }}
+        >
           {activeTask ? (
-            <div className="w-80">
+            <div className="w-80 transform rotate-3 shadow-2xl">
               <TaskCard
                 task={activeTask}
                 isDragging={true}

@@ -89,11 +89,17 @@ export default function TaskCard({
       style={style}
       {...attributes}
       {...listeners}
-      className={`cursor-grab active:cursor-grabbing ${isDragging || isSortableDragging ? 'opacity-50' : ''}`}
+      className={`cursor-grab active:cursor-grabbing transition-all duration-200 ${
+        isDragging || isSortableDragging ? 'opacity-30 scale-95' : 'hover:scale-[1.02]'
+      }`}
     >
       <Card
-        className={`p-3 hover:shadow-md transition-shadow ${
-          isOverdue ? 'border-red-300 bg-red-50' : 'border-gray-200'
+        className={`p-3 transition-all duration-200 ${
+          isDragging || isSortableDragging 
+            ? 'shadow-2xl border-blue-300 bg-blue-50' 
+            : isOverdue 
+              ? 'border-red-300 bg-red-50 hover:shadow-md' 
+              : 'border-gray-200 hover:shadow-md hover:border-gray-300'
         }`}
         onClick={onClick}
       >

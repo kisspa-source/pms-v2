@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Plus, Trash2, Edit, Users, Target, BarChart3, Clock, X, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import MainLayout from '@/components/layout/MainLayout'
+import { useAlert, useConfirm } from '@/components/ui/alert-dialog'
 
 interface User {
   id: string
@@ -48,6 +49,8 @@ export default function ProjectMembersPage() {
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [addingMember, setAddingMember] = useState(false)
+  const { showAlert, AlertComponent } = useAlert()
+  const { showConfirm, ConfirmComponent } = useConfirm()
 
   const [newMember, setNewMember] = useState({
     user_id: '',
@@ -139,9 +142,9 @@ export default function ProjectMembersPage() {
   }
 
   const handleRemoveMember = async (memberId: string, memberName: string) => {
-    if (!confirm(`${memberName}님을 프로젝트에서 제거하시겠습니까?`)) {
-      return
-    }
+    showConfirm(
+      `${memberName}님을 프로젝트에서 제거하시겠습니까?`,
+      async () => {
 
     try {
       const response = await fetch(`/api/projects/${projectId}/members/${memberId}`, {

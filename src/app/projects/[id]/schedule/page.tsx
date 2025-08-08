@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import MainLayout from '@/components/layout/MainLayout';
 import { GanttChart } from '@/components/schedule/GanttChart';
 import { TimelineView } from '@/components/schedule/TimelineView';
 import { TaskDependencyManager } from '@/components/schedule/TaskDependencyManager';
@@ -382,21 +383,22 @@ export default function ProjectSchedulePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      {/* 헤더 */}
-      <div className="mb-6">
-        <div className="flex items-center gap-4 mb-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push(`/projects/${projectId}`)}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            프로젝트로 돌아가기
-          </Button>
-          <h1 className="text-2xl font-bold">프로젝트 일정 관리</h1>
+    <MainLayout>
+      <div className="container mx-auto px-4 py-6">
+        {/* 헤더 */}
+        <div className="mb-6">
+          <div className="flex items-center gap-4 mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push(`/projects/${projectId}`)}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              프로젝트로 돌아가기
+            </Button>
+            <h1 className="text-2xl font-bold">프로젝트 일정 관리</h1>
+          </div>
         </div>
-      </div>
 
       {/* 프로젝트 개요 */}
       {project && (
@@ -578,6 +580,7 @@ export default function ProjectSchedulePage() {
           <div className="text-sm text-gray-600">작업 의존성</div>
         </Card>
       </div>
-    </div>
+      </div>
+    </MainLayout>
   );
 } 

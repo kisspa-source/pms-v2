@@ -29,7 +29,7 @@ export default function KanbanColumn({
   onTaskUpdate,
   onTaskEdit,
 }: KanbanColumnProps) {
-  const { setNodeRef } = useDroppable({
+  const { setNodeRef, isOver } = useDroppable({
     id,
   });
 
@@ -85,15 +85,21 @@ export default function KanbanColumn({
 
   return (
     <div className="h-full">
-      <Card className={`h-full ${config.bgColor} ${config.borderColor} border-2`}>
+      <Card className={`h-full ${config.bgColor} ${config.borderColor} border-2 transition-all duration-200 ${
+        isOver ? 'ring-2 ring-blue-400 ring-opacity-50 shadow-lg scale-[1.02]' : ''
+      }`}>
         {/* 컬럼 헤더 */}
-        <div className={`p-4 ${config.headerColor} border-b ${config.borderColor}`}>
+        <div className={`p-4 ${config.headerColor} border-b ${config.borderColor} ${
+          isOver ? 'bg-opacity-80' : ''
+        }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="text-lg">{config.icon}</span>
               <h3 className="font-semibold text-gray-900">{title}</h3>
             </div>
-            <span className="bg-white px-2 py-1 rounded-full text-sm font-medium text-gray-700">
+            <span className={`px-2 py-1 rounded-full text-sm font-medium transition-colors ${
+              isOver ? 'bg-blue-100 text-blue-700' : 'bg-white text-gray-700'
+            }`}>
               {tasks.length}
             </span>
           </div>
@@ -102,7 +108,9 @@ export default function KanbanColumn({
         {/* 컬럼 본문 */}
         <div
           ref={setNodeRef}
-          className="p-2 h-[calc(100%-80px)] overflow-y-auto"
+          className={`p-2 h-[calc(100%-80px)] overflow-y-auto transition-all duration-200 ${
+            isOver ? 'bg-opacity-50' : ''
+          }`}
         >
           <SortableContext items={tasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
             <div className="space-y-2">
@@ -120,11 +128,26 @@ export default function KanbanColumn({
 
           {/* 빈 상태 */}
           {tasks.length === 0 && (
-            <div className="flex items-center justify-center h-32 text-gray-400">
+            <div className={`flex items-center justify-center h-32 text-gray-400 transition-all duration-200 ${
+              isOver ? 'text-blue-500' : ''
+            }`}>
               <div className="text-center">
-                <div className="text-2xl mb-2">📭</div>
-                <p className="text-sm">작업이 없습니다</p>
+                <div className={`text-2xl mb-2 transition-all duration-200 ${
+                  isOver ? 'scale-110' : ''
+                }`}>
+                  {isOver ? '📥' : '📭'}
+                </div>
+                <p className="text-sm">
+                  {isOver ? '여기에 작업을 놓으세요' : '작업이 없습니다'}
+                </p>
               </div>
+            </div>
+          )}
+
+          {/* 드롭 영역 표시 */}
+          {isOver && tasks.length > 0 && (
+            <div className="mt-2 p-3 border-2 border-dashed border-blue-400 rounded-lg bg-blue-50 text-center">
+              <p className="text-sm text-blue-600">여기에 작업을 놓으세요</p>
             </div>
           )}
         </div>

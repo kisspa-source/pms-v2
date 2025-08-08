@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import PermissionGuard from '@/components/auth/PermissionGuard'
+import { useAlert, useConfirm } from '@/components/ui/alert-dialog'
 
 interface Organization {
   id: string
@@ -42,6 +43,8 @@ export default function OrganizationsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingOrganization, setEditingOrganization] = useState<Organization | null>(null)
+  const { showAlert, AlertComponent } = useAlert()
+  const { showConfirm, ConfirmComponent } = useConfirm()
 
   // 폼 상태
   const [formData, setFormData] = useState({
@@ -80,7 +83,7 @@ export default function OrganizationsPage() {
       setPagination(data.pagination)
     } catch (error) {
       console.error('조직 목록 조회 오류:', error)
-      alert('조직 목록을 불러오는데 실패했습니다.')
+      showAlert('조직 목록을 불러오는데 실패했습니다.', 'error')
     } finally {
       setLoading(false)
     }
@@ -105,13 +108,13 @@ export default function OrganizationsPage() {
         throw new Error(error.error || '조직 생성에 실패했습니다.')
       }
 
-      alert('조직이 성공적으로 생성되었습니다.')
+      showAlert('조직이 성공적으로 생성되었습니다.', 'success')
       setShowCreateForm(false)
       setFormData({ name: '', description: '', address: '', phone: '', email: '', website: '' })
       fetchOrganizations()
     } catch (error) {
       console.error('조직 생성 오류:', error)
-      alert(error instanceof Error ? error.message : '조직 생성에 실패했습니다.')
+      showAlert(error instanceof Error ? error.message : '조직 생성에 실패했습니다.', 'error')
     }
   }
 
@@ -132,18 +135,20 @@ export default function OrganizationsPage() {
         throw new Error(error.error || '조직 수정에 실패했습니다.')
       }
 
-      alert('조직 정보가 성공적으로 수정되었습니다.')
+      showAlert('조직 정보가 성공적으로 수정되었습니다.', 'success')
       setEditingOrganization(null)
       setFormData({ name: '', description: '', address: '', phone: '', email: '', website: '' })
       fetchOrganizations()
     } catch (error) {
       console.error('조직 수정 오류:', error)
-      alert(error instanceof Error ? error.message : '조직 수정에 실패했습니다.')
+      showAlert(error instanceof Error ? error.message : '조직 수정에 실패했습니다.', 'error')
     }
   }
 
   const handleDeleteOrganization = async (organizationId: string) => {
-    if (!confirm('정말로 이 조직을 삭제하시겠습니까?')) return
+    showConfirm(
+      '정말로 이 조직을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.',
+      async () => {
 
     try {
       const response = await fetch(`/api/organizations/${organizationId}`, {
@@ -155,12 +160,19 @@ export default function OrganizationsPage() {
         throw new Error(error.error || '조직 삭제에 실패했습니다.')
       }
 
-      alert('조직이 성공적으로 삭제되었습니다.')
-      fetchOrganizations()
-    } catch (error) {
-      console.error('조직 삭제 오류:', error)
-      alert(error instanceof Error ? error.message : '조직 삭제에 실패했습니다.')
-    }
+        showAlert('조직이 성공적으로 삭제되었습니다.', 'success')
+        fetchOrganizations()
+      } catch (error) {
+        console.error('조직 삭제 오류:', error)
+        showAlert(error instanceof Error ? error.message : '조직 삭제에 실패했습니다.', 'error')
+      }
+    },
+    {
+      type: 'error',
+      title: '조직 삭제',
+      confirmText: '삭제',
+      cancelText: '취소'
+    })
   }
 
   const startEdit = (organization: Organization) => {
@@ -369,6 +381,10 @@ export default function OrganizationsPage() {
             </div>
           )}
         </div>
+        
+        {/* Alert/Confirm Components */}
+        <AlertComponent />
+        <ConfirmComponent />
       </MainLayout>
     </PermissionGuard>
   )

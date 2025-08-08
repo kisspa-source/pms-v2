@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useAlert } from '@/components/ui/alert-dialog';
 
 interface Task {
   id: string;
@@ -55,6 +56,7 @@ export const TaskDependencyManager: React.FC<TaskDependencyManagerProps> = ({
   const [dependencyType, setDependencyType] = useState<TaskDependency['dependency_type']>('FINISH_TO_START');
   const [lagDays, setLagDays] = useState<number>(0);
   const [showAddForm, setShowAddForm] = useState(false);
+  const { showAlert, AlertComponent } = useAlert();
 
   // 의존성 타입 옵션
   const dependencyTypes = [
@@ -98,12 +100,12 @@ export const TaskDependencyManager: React.FC<TaskDependencyManagerProps> = ({
   // 의존성 추가
   const handleAddDependency = () => {
     if (!selectedPredecessor || !selectedSuccessor) {
-      alert('선행 작업과 후행 작업을 모두 선택해주세요.');
+      showAlert('선행 작업과 후행 작업을 모두 선택해주세요.', 'warning');
       return;
     }
 
     if (selectedPredecessor === selectedSuccessor) {
-      alert('같은 작업을 선행/후행으로 설정할 수 없습니다.');
+      showAlert('같은 작업을 선행/후행으로 설정할 수 없습니다.', 'warning');
       return;
     }
 
@@ -113,13 +115,13 @@ export const TaskDependencyManager: React.FC<TaskDependencyManagerProps> = ({
     );
 
     if (existingDependency) {
-      alert('이미 존재하는 의존성입니다.');
+      showAlert('이미 존재하는 의존성입니다.', 'warning');
       return;
     }
 
     // 순환 의존성 검사
     if (checkCircularDependency(selectedPredecessor, selectedSuccessor)) {
-      alert('순환 의존성이 감지되었습니다. 다른 의존성을 선택해주세요.');
+      showAlert('순환 의존성이 감지되었습니다. 다른 의존성을 선택해주세요.', 'error');
       return;
     }
 
@@ -152,6 +154,7 @@ export const TaskDependencyManager: React.FC<TaskDependencyManagerProps> = ({
   };
 
   return (
+    <>
     <Card className="p-4">
       <div className="mb-4">
         <h3 className="text-lg font-semibold mb-2">작업 의존성 관리</h3>
@@ -365,5 +368,8 @@ export const TaskDependencyManager: React.FC<TaskDependencyManagerProps> = ({
         </div>
       </div>
     </Card>
+    
+    <AlertComponent />
+    </>
   );
 }; 
