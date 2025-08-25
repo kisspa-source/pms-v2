@@ -48,6 +48,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           role: user.role,
           organizationId: user.organization_members[0]?.organization_id || null,
+          avatar_url: user.avatar_url,
         }
       }
     })
@@ -64,15 +65,26 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = user.role
         token.organizationId = user.organizationId
+        token.avatar_url = user.avatar_url
       }
       return token
     },
-    async session({ session, token }) {
+    async session({ session, token, trigger, newSession }) {
       if (token) {
         session.user.id = token.sub as string
         session.user.role = token.role as string
         session.user.organizationId = token.organizationId as string
+        session.user.avatar_url = token.avatar_url as string
       }
+      
+      // 세션 업데이트 시 새로운 데이터 적용
+      if (trigger === "update" && newSession) {
+        if (newSession.avatar_url !== undefined) {
+          session.user.avatar_url = newSession.avatar_url
+          token.avatar_url = newSession.avatar_url
+        }
+      }
+      
       return session
     },
     async redirect({ url, baseUrl }) {

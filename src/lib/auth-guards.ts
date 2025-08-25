@@ -120,33 +120,45 @@ export const ROLE_ROUTES = {
     '/tasks',
     '/clients',
     '/reports',
+    '/settings',
   ],
   [UserRole.PL]: [
     '/dashboard',
     '/projects',
     '/tasks',
+    '/settings',
   ],
   [UserRole.DEVELOPER]: [
     '/dashboard',
     '/projects',
     '/tasks',
+    '/settings',
   ],
   [UserRole.DESIGNER]: [
     '/dashboard',
     '/projects',
     '/tasks',
+    '/settings',
   ],
   [UserRole.CONSULTANT]: [
     '/dashboard',
     '/projects',
     '/tasks',
+    '/settings',
   ],
 } as const
 
 // 사용자가 특정 라우트에 접근할 수 있는지 확인
 export function canAccessRoute(userRole: UserRole, route: string): boolean {
   const allowedRoutes = ROLE_ROUTES[userRole] || []
-  return allowedRoutes.some(allowedRoute => route.startsWith(allowedRoute))
+  
+  // 정확한 매칭을 위해 경로를 정규화
+  const normalizedRoute = route.endsWith('/') ? route.slice(0, -1) : route
+  
+  return allowedRoutes.some(allowedRoute => {
+    const normalizedAllowedRoute = allowedRoute.endsWith('/') ? allowedRoute.slice(0, -1) : allowedRoute
+    return normalizedRoute === normalizedAllowedRoute || normalizedRoute.startsWith(normalizedAllowedRoute + '/')
+  })
 }
 
 // 역할별 대시보드 리다이렉트 경로
@@ -187,26 +199,31 @@ export const ROLE_MENU_ITEMS = {
     { label: '작업 관리', href: '/tasks', icon: 'task' },
     { label: '고객사 관리', href: '/clients', icon: 'client' },
     { label: '보고서', href: '/reports', icon: 'report' },
+    { label: '설정', href: '/settings', icon: 'settings' },
   ],
   [UserRole.PL]: [
     { label: '대시보드', href: '/dashboard', icon: 'dashboard' },
     { label: '프로젝트', href: '/projects', icon: 'project' },
     { label: '작업', href: '/tasks', icon: 'task' },
+    { label: '설정', href: '/settings', icon: 'settings' },
   ],
   [UserRole.DEVELOPER]: [
     { label: '대시보드', href: '/dashboard', icon: 'dashboard' },
     { label: '프로젝트', href: '/projects', icon: 'project' },
     { label: '작업', href: '/tasks', icon: 'task' },
+    { label: '설정', href: '/settings', icon: 'settings' },
   ],
   [UserRole.DESIGNER]: [
     { label: '대시보드', href: '/dashboard', icon: 'dashboard' },
     { label: '프로젝트', href: '/projects', icon: 'project' },
     { label: '작업', href: '/tasks', icon: 'task' },
+    { label: '설정', href: '/settings', icon: 'settings' },
   ],
   [UserRole.CONSULTANT]: [
     { label: '대시보드', href: '/dashboard', icon: 'dashboard' },
     { label: '프로젝트', href: '/projects', icon: 'project' },
     { label: '작업', href: '/tasks', icon: 'task' },
+    { label: '설정', href: '/settings', icon: 'settings' },
   ],
 } as const
 

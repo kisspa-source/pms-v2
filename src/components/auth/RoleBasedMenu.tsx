@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { getMenuItems } from '@/lib/auth-guards'
+import { ROLE_MENU_ITEMS, UserRole } from '@/lib/auth-guards'
 import { cn } from '@/lib/utils'
 
 interface MenuItem {
@@ -20,7 +20,13 @@ export default function RoleBasedMenu() {
     return null
   }
 
-  const menuItems = getMenuItems(session.user.role)
+  const userRole = session.user.role
+  // PMO의 모든 메뉴를 기준으로 하되, 사용자 권한에 따라 활성화/비활성화 처리
+  const allMenuItems = ROLE_MENU_ITEMS[UserRole.PMO]
+  const userMenuItems = ROLE_MENU_ITEMS[userRole] || []
+  
+  // 사용자가 접근할 수 있는 메뉴의 href 목록
+  const userAccessibleHrefs = new Set(userMenuItems.map(item => item.href))
 
   const getIcon = (iconName: string) => {
     switch (iconName) {
@@ -61,6 +67,12 @@ export default function RoleBasedMenu() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
         )
+      case 'task':
+        return (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        )
       case 'settings':
         return (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,25 +90,88 @@ export default function RoleBasedMenu() {
   }
 
   return (
-    <nav className="space-y-1">
-      {menuItems.map((item: MenuItem) => {
+    <nav className="space-y-1 p-2">
+      {allMenuItems.map((item: MenuItem, index) => {
         const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+        const hasAccess = userAccessibleHrefs.has(item.href)
         
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
-              isActive
-                ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-700'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-            )}
-          >
-            <span className="mr-3">{getIcon(item.icon)}</span>
-            {item.label}
-          </Link>
-        )
+        // 디버깅용 로그 (개발 환경에서만)
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Menu item: ${item.label} (${item.href}), User role: ${userRole}, Has access: ${hasAccess}`)
+        }
+
+        // 섹션 구분선 추가 조건
+        const shouldShowDivider = index === 0 || (item.href === '/clients' && index > 0)
+
+        if (hasAccess) {
+          return (
+            <div key={item.href}>
+              {shouldShowDivider && index > 0 && (
+                <div className="my-3 border-t border-gray-200/60"></div>
+              )}
+              <Link
+                href={item.href}
+                className={cn(
+                  'flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200',
+                  'border border-transparent hover:shadow-sm group',
+                  isActive
+                    ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200 shadow-sm font-semibold'
+                    : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:text-gray-900 hover:border-gray-200'
+                )}
+              >
+                <span className={cn(
+                  "mr-3 transition-colors",
+                  isActive ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"
+                )}>
+                  {getIcon(item.icon)}
+                </span>
+                <span className="font-medium">{item.label}</span>
+                {isActive && (
+                  <div className="ml-auto w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                )}
+              </Link>
+            </div>
+          )
+        } else {
+          return (
+            <div key={item.href}>
+              {shouldShowDivider && index > 0 && (
+                <div className="my-3 border-t border-gray-200/60"></div>
+              )}
+              <div
+                className={cn(
+                  'flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-not-allowed relative group',
+                  'text-gray-400 bg-gray-50 border-2 border-dashed border-gray-200',
+                  'opacity-60 select-none transition-all duration-200'
+                )}
+                title={`${item.label} - 접근 권한이 없습니다`}
+              >
+                <span className="mr-3 opacity-40 grayscale filter">
+                  {getIcon(item.icon)}
+                </span>
+                <span className="opacity-70 line-through decoration-gray-400 decoration-2">
+                  {item.label}
+                </span>
+                <span className="ml-auto text-xs opacity-80 text-red-500 font-bold">
+                  🔒
+                </span>
+                
+                {/* 비활성화 오버레이 */}
+                <div className="absolute inset-0 bg-gradient-to-r from-gray-100/30 to-gray-200/30 rounded-lg"></div>
+                
+                {/* 개선된 툴팁 */}
+                <div className="absolute left-full ml-3 px-3 py-2 bg-red-600 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap z-50 shadow-xl">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">🚫</span>
+                    <span className="font-medium">접근 권한이 없습니다</span>
+                  </div>
+                  {/* 툴팁 화살표 */}
+                  <div className="absolute left-0 top-1/2 transform -translate-x-1 -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-red-600"></div>
+                </div>
+              </div>
+            </div>
+          )
+        }
       })}
     </nav>
   )

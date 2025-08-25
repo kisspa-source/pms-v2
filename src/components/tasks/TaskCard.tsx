@@ -127,6 +127,14 @@ export default function TaskCard({
 
         {/* 작업 메타 정보 */}
         <div className="space-y-2">
+          {/* 프로젝트 정보 */}
+          <div className="flex items-center space-x-1">
+            <span className="text-xs text-gray-500">🏗️</span>
+            <span className="text-xs text-gray-600 font-medium truncate">
+              {task.project.name}
+            </span>
+          </div>
+
           {/* 우선순위 및 진행률 */}
           <div className="flex items-center justify-between">
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${priorityConfig.color}`}>

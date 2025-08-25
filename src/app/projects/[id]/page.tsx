@@ -26,6 +26,9 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import MainLayout from '@/components/layout/MainLayout'
+import PermissionGuard from '@/components/auth/PermissionGuard'
+import { CommentSection } from '@/components/project/CommentSection'
+import { AttachmentSection } from '@/components/project/AttachmentSection'
 
 interface ProjectDetail extends Project {
   client: {
@@ -107,7 +110,7 @@ export default function ProjectDetailPage() {
   const { data: session } = useSession()
   const [project, setProject] = useState<ProjectDetail | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState('details')
   const { showAlert, AlertComponent } = useAlert()
   const { showConfirm, ConfirmComponent } = useConfirm()
 
@@ -294,177 +297,27 @@ export default function ProjectDetailPage() {
             </div>
           </div>
           <div className="flex gap-3">
-            <Link href={`/projects/${projectId}/edit`}>
-              <Button className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large h-12 px-6">
-                <Edit className="w-4 h-4 mr-2" />
-                프로젝트 수정
-              </Button>
-            </Link>
+            <PermissionGuard permission="canManageProjects" fallback={null}>
+              <Link href={`/projects/${projectId}/edit`}>
+                <Button className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large h-12 px-6">
+                  <Edit className="w-4 h-4 mr-2" />
+                  프로젝트 수정
+                </Button>
+              </Link>
+            </PermissionGuard>
           </div>
-        </div>        {/* 컴팩트한 통계 카드 - 높이 50% 축소 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
-          {/* 상태 */}
-          <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
-            <CardContent className="p-2">
-              <div className="flex items-center gap-1.5">
-                <div className="p-1 bg-blue-100 rounded-md">
-                  <BarChart3 className="w-3 h-3 text-blue-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-gray-600 mb-0.5">상태</div>
-                  <div className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
-                    {project.status}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 진행률 */}
-          <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
-            <CardContent className="p-2">
-              <div className="flex items-center gap-1.5">
-                <div className="p-1 bg-green-100 rounded-md">
-                  <Target className="w-3 h-3 text-green-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-gray-600 mb-0.5">진행률</div>
-                  <div className="text-sm font-bold text-gray-800">{project.progress}%</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 팀원 수 */}
-          <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
-            <CardContent className="p-2">
-              <div className="flex items-center gap-1.5">
-                <div className="p-1 bg-purple-100 rounded-md">
-                  <Users className="w-3 h-3 text-purple-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-gray-600 mb-0.5">팀원</div>
-                  <div className="text-sm font-bold text-gray-800">{project._count.members}명</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 작업 수 */}
-          <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
-            <CardContent className="p-2">
-              <div className="flex items-center gap-1.5">
-                <div className="p-1 bg-orange-100 rounded-md">
-                  <CheckCircle className="w-3 h-3 text-orange-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-gray-600 mb-0.5">작업</div>
-                  <div className="text-sm font-bold text-gray-800">{project._count.tasks}개</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 예산 */}
-          <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
-            <CardContent className="p-2">
-              <div className="flex items-center gap-1.5">
-                <div className="p-1 bg-yellow-100 rounded-md">
-                  <DollarSign className="w-3 h-3 text-yellow-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-gray-600 mb-0.5">예산</div>
-                  <div className="text-xs font-bold text-gray-800 truncate">
-                    {project.budget_amount ? `${(project.budget_amount / 1000000).toFixed(0)}M` : '미정'}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 일정 */}
-          <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
-            <CardContent className="p-2">
-              <div className="flex items-center gap-1.5">
-                <div className="p-1 bg-red-100 rounded-md">
-                  <Calendar className="w-3 h-3 text-red-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-gray-600 mb-0.5">기간</div>
-                  <div className="text-xs font-bold text-gray-800">
-                    {project.start_date && project.end_date 
-                      ? `${Math.ceil((new Date(project.end_date).getTime() - new Date(project.start_date).getTime()) / (1000 * 60 * 60 * 24))}일`
-                      : '미정'
-                    }
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
-
-        {/* 상태 변경 및 상세 정보 (접을 수 있는 섹션) */}
-        <Card className="modern-card border-0 shadow-sm mb-6">
-          <CardContent className="p-4">
-            <details className="group">
-              <summary className="flex items-center justify-between cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
-                <span className="flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  상세 정보 및 설정
-                </span>
-                <span className="text-xs text-gray-500 group-open:hidden">펼치기</span>
-                <span className="text-xs text-gray-500 hidden group-open:inline">접기</span>
-              </summary>
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* 상태 변경 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">상태 변경</label>
-                    <select
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                      value={project.status}
-                      onChange={(e) => handleStatusChange(e.target.value as ProjectStatus)}
-                    >
-                      {Object.values(ProjectStatus).map(status => (
-                        <option key={status} value={status}>{status}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* 일정 정보 */}
-                  <div>
-                    <div className="text-sm font-medium text-gray-700 mb-2">일정 정보</div>
-                    <div className="space-y-1 text-xs text-gray-600">
-                      <div>시작: {project.start_date ? new Date(project.start_date).toLocaleDateString() : '미정'}</div>
-                      <div>종료: {project.end_date ? new Date(project.end_date).toLocaleDateString() : '미정'}</div>
-                      <div>예상: {project.estimated_hours || 0}h / 실제: {project.actual_hours}h</div>
-                    </div>
-                  </div>
-
-                  {/* 예산 정보 */}
-                  <div>
-                    <div className="text-sm font-medium text-gray-700 mb-2">예산 정보</div>
-                    <div className="space-y-1 text-xs text-gray-600">
-                      <div>예산: {project.budget_amount ? `${project.budget_amount.toLocaleString()} ${project.currency}` : '미정'}</div>
-                      <div>계약: {project.contract_amount ? `${project.contract_amount.toLocaleString()} ${project.currency}` : '미정'}</div>
-                      <div>실제: {project.actual_cost.toLocaleString()} {project.currency}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </details>
-          </CardContent>
-        </Card>
 
         {/* 탭 네비게이션 */}
         <Card className="modern-card border-0 shadow-medium mb-8">
           <CardContent className="p-0">
             <nav className="flex flex-wrap bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-2">
               {[
-                { id: 'overview', label: '개요', icon: BarChart3 },
+                { id: 'details', label: '상세정보', icon: BarChart3 },
+                { id: 'overview', label: '개요', icon: FileText },
                 { id: 'members', label: '팀원', icon: Users },
                 { id: 'schedule', label: '일정', icon: Calendar },
-                { id: 'phases', label: '단계', icon: FileText },
+                { id: 'phases', label: '단계', icon: Target },
                 { id: 'tasks', label: '작업', icon: CheckCircle },
                 { id: 'comments', label: '댓글', icon: MessageSquare },
                 { id: 'attachments', label: '첨부파일', icon: Paperclip }
@@ -490,6 +343,181 @@ export default function ProjectDetailPage() {
         </Card>      
   {/* 탭 컨텐츠 */}
         <div className="mb-6">
+          {activeTab === 'details' && (
+            <div className="space-y-6">
+              {/* 컴팩트한 통계 카드 */}
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {/* 상태 */}
+                <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-blue-100 rounded-md">
+                        <BarChart3 className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-gray-600 mb-1">상태</div>
+                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+                          {project.status}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 진행률 */}
+                <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-green-100 rounded-md">
+                        <Target className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-gray-600 mb-1">진행률</div>
+                        <div className="text-sm font-bold text-gray-800">{project.progress}%</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 팀원 수 */}
+                <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-purple-100 rounded-md">
+                        <Users className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-gray-600 mb-1">팀원</div>
+                        <div className="text-sm font-bold text-gray-800">{project._count.members}명</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 작업 수 */}
+                <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-orange-100 rounded-md">
+                        <CheckCircle className="w-4 h-4 text-orange-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-gray-600 mb-1">작업</div>
+                        <div className="text-sm font-bold text-gray-800">{project._count.tasks}개</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 예산 */}
+                <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-yellow-100 rounded-md">
+                        <DollarSign className="w-4 h-4 text-yellow-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-gray-600 mb-1">예산</div>
+                        <div className="text-xs font-bold text-gray-800 truncate">
+                          {project.budget_amount ? `${(project.budget_amount / 1000000).toFixed(0)}M` : '미정'}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 일정 */}
+                <Card className="modern-card hover-lift transition-all duration-300 border-0 shadow-sm hover:shadow-md">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-red-100 rounded-md">
+                        <Calendar className="w-4 h-4 text-red-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-gray-600 mb-1">기간</div>
+                        <div className="text-xs font-bold text-gray-800">
+                          {project.start_date && project.end_date 
+                            ? `${Math.ceil((new Date(project.end_date).getTime() - new Date(project.start_date).getTime()) / (1000 * 60 * 60 * 24))}일`
+                            : '미정'
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* 상태 변경 및 상세 정보 */}
+              <Card className="modern-card border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-blue-600" />
+                    프로젝트 관리
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* 상태 변경 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">상태 변경</label>
+                      <select
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        value={project.status}
+                        onChange={(e) => handleStatusChange(e.target.value as ProjectStatus)}
+                      >
+                        {Object.values(ProjectStatus).map(status => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* 일정 정보 */}
+                    <div>
+                      <div className="text-sm font-medium text-gray-700 mb-2">일정 정보</div>
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <div className="flex justify-between">
+                          <span>시작일:</span>
+                          <span className="font-medium">{project.start_date ? new Date(project.start_date).toLocaleDateString() : '미정'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>종료일:</span>
+                          <span className="font-medium">{project.end_date ? new Date(project.end_date).toLocaleDateString() : '미정'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>예상 시간:</span>
+                          <span className="font-medium">{project.estimated_hours || 0}h</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>실제 시간:</span>
+                          <span className="font-medium">{project.actual_hours}h</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 예산 정보 */}
+                    <div>
+                      <div className="text-sm font-medium text-gray-700 mb-2">예산 정보</div>
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <div className="flex justify-between">
+                          <span>예산:</span>
+                          <span className="font-medium">{project.budget_amount ? `${project.budget_amount.toLocaleString()} ${project.currency}` : '미정'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>계약금:</span>
+                          <span className="font-medium">{project.contract_amount ? `${project.contract_amount.toLocaleString()} ${project.currency}` : '미정'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>실제 비용:</span>
+                          <span className="font-medium">{project.actual_cost.toLocaleString()} {project.currency}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* 고객사 및 조직 정보 - 컴팩트하게 */}
@@ -874,33 +902,29 @@ export default function ProjectDetailPage() {
 
           {activeTab === 'comments' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800">프로젝트 댓글</h3>
-              
-              <Card className="modern-card border-0 shadow-sm">
-                <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <MessageSquare className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h4 className="text-lg font-medium text-gray-800 mb-2">댓글 기능 준비 중</h4>
-                  <p className="text-gray-600 text-sm">댓글 기능은 추후 구현 예정입니다.</p>
-                </CardContent>
-              </Card>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-800">프로젝트 댓글</h3>
+                {process.env.NODE_ENV === 'development' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      const { runBasicTests } = await import('@/lib/test-utils')
+                      runBasicTests(project.id)
+                    }}
+                  >
+                    🧪 테스트 실행
+                  </Button>
+                )}
+              </div>
+              <CommentSection projectId={project.id} />
             </div>
           )}
 
           {activeTab === 'attachments' && (
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800">첨부파일</h3>
-              
-              <Card className="modern-card border-0 shadow-sm">
-                <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Paperclip className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h4 className="text-lg font-medium text-gray-800 mb-2">첨부파일 기능 준비 중</h4>
-                  <p className="text-gray-600 text-sm">첨부파일 기능은 추후 구현 예정입니다.</p>
-                </CardContent>
-              </Card>
+              <AttachmentSection projectId={project.id} />
             </div>
           )}
         </div>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { Avatar } from '@/components/ui/avatar'
 import { UserRole } from '@/lib/auth-guards'
 import { usePermissions } from '@/hooks/usePermissions'
 import { 
@@ -249,11 +250,13 @@ export default function DashboardPage() {
             <Badge variant="secondary" className="text-xs px-3 py-1 bg-white/80 backdrop-blur-sm shadow-soft">
               {session?.user?.role}
             </Badge>
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-medium">
-              <span className="text-white font-bold text-sm">
-                {session?.user?.name?.charAt(0) || 'U'}
-              </span>
-            </div>
+            <Avatar
+              src={session?.user?.avatar_url}
+              alt={session?.user?.name || 'User'}
+              fallback={session?.user?.name?.charAt(0) || 'U'}
+              size="lg"
+              className="shadow-medium"
+            />
           </div>
         </div>
         

@@ -45,6 +45,7 @@ export default withAuth(
       '/users',
       '/organizations',
       '/reports',
+      '/settings',
       '/time-tracking',
       '/notifications'
     ]

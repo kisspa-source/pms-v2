@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { Avatar } from '@/components/ui/avatar'
 import { 
   User, 
   Bell, 
@@ -71,7 +72,7 @@ interface OrganizationSettings {
 }
 
 export default function SettingsPage() {
-  const { data: session } = useSession()
+  const { data: session, update } = useSession()
   const router = useRouter()
   const { allPermissions } = usePermissions()
   const [activeTab, setActiveTab] = useState('profile')
@@ -232,6 +233,77 @@ export default function SettingsPage() {
     }
   }
 
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // 파일 크기 검증 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('파일 크기는 5MB를 초과할 수 없습니다.')
+      return
+    }
+
+    // 파일 타입 검증
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('지원하지 않는 파일 형식입니다. (JPEG, PNG, GIF, WebP만 지원)')
+      return
+    }
+
+    try {
+      setSaving(true)
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/settings/avatar', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setUserSettings(prev => ({ ...prev, avatar_url: data.avatar_url }))
+        // 세션 업데이트
+        await update({ avatar_url: data.avatar_url })
+        toast.success('프로필 사진이 업데이트되었습니다.')
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || '프로필 사진 업로드에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('프로필 사진 업로드 오류:', error)
+      toast.error(error instanceof Error ? error.message : '프로필 사진 업로드에 실패했습니다.')
+    } finally {
+      setSaving(false)
+      // 파일 입력 초기화
+      event.target.value = ''
+    }
+  }
+
+  const handleAvatarDelete = async () => {
+    try {
+      setSaving(true)
+      const response = await fetch('/api/settings/avatar', {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setUserSettings(prev => ({ ...prev, avatar_url: '' }))
+        // 세션 업데이트
+        await update({ avatar_url: null })
+        toast.success('프로필 사진이 삭제되었습니다.')
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || '프로필 사진 삭제에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('프로필 사진 삭제 오류:', error)
+      toast.error(error instanceof Error ? error.message : '프로필 사진 삭제에 실패했습니다.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const tabs = [
     { id: 'profile', label: '프로필', icon: User },
     { id: 'notifications', label: '알림', icon: Bell },
@@ -316,24 +388,60 @@ export default function SettingsPage() {
                   {/* 아바타 섹션 */}
                   <div className="flex items-center gap-6">
                     <div className="relative">
-                      <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                        {userSettings.avatar_url ? (
-                          <img src={userSettings.avatar_url} alt="Avatar" className="w-20 h-20 rounded-full object-cover" />
-                        ) : (
-                          userSettings.name?.charAt(0) || 'U'
-                        )}
-                      </div>
-                      <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-white rounded-full shadow-lg border-2 border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors">
+                      <Avatar
+                        src={userSettings.avatar_url}
+                        alt="프로필 사진"
+                        fallback={userSettings.name?.charAt(0) || 'U'}
+                        size="2xl"
+                      />
+                      <label 
+                        htmlFor="avatar-upload"
+                        className="absolute -bottom-1 -right-1 w-8 h-8 bg-white rounded-full shadow-lg border-2 border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer"
+                      >
                         <Camera className="w-4 h-4 text-gray-600" />
-                      </button>
+                      </label>
+                      <input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                        disabled={saving}
+                      />
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-800">{userSettings.name}</h3>
                       <p className="text-sm text-gray-600">{session.user?.role}</p>
-                      <Button variant="outline" size="sm" className="mt-2">
-                        <Camera className="w-4 h-4 mr-2" />
-                        사진 변경
-                      </Button>
+                      <div className="flex gap-2 mt-2">
+                        <label htmlFor="avatar-upload">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="cursor-pointer"
+                            disabled={saving}
+                            asChild
+                          >
+                            <span>
+                              <Camera className="w-4 h-4 mr-2" />
+                              사진 변경
+                            </span>
+                          </Button>
+                        </label>
+                        {userSettings.avatar_url && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={handleAvatarDelete}
+                            disabled={saving}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            삭제
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        JPEG, PNG, GIF, WebP 형식 (최대 5MB)
+                      </p>
                     </div>
                   </div>
 

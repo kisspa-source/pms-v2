@@ -92,17 +92,23 @@ export async function GET(request: NextRequest) {
 
     // 단순 목록 요청인 경우 (작업 생성 모달 등에서 사용)
     if (simple === 'true') {
-      const simpleProjects = await prisma.project.findMany({
-        where,
-        select: {
-          id: true,
-          name: true,
-        },
-        orderBy: {
-          name: 'asc',
-        },
-      });
-      return NextResponse.json(simpleProjects);
+      try {
+        const simpleProjects = await prisma.project.findMany({
+          where,
+          select: {
+            id: true,
+            name: true,
+          },
+          orderBy: {
+            name: 'asc',
+          },
+        });
+        console.log('Simple projects query result:', simpleProjects);
+        return NextResponse.json(simpleProjects);
+      } catch (error) {
+        console.error('Simple projects query error:', error);
+        return NextResponse.json([], { status: 200 });
+      }
     }
 
     return NextResponse.json({

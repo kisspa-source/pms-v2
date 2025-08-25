@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Avatar } from '@/components/ui/avatar'
 import { UserRole } from '@/lib/auth-guards'
 import PermissionGuard from '@/components/auth/PermissionGuard'
 import { useAlert, useConfirm } from '@/components/ui/alert-dialog'
@@ -17,11 +18,23 @@ interface User {
   name: string
   email: string
   role: UserRole
+  avatar_url?: string
   organizationId: string | null
   organization: {
     id: string
     name: string
   } | null
+  projects: {
+    id: string
+    name: string
+    status: string
+    priority: string
+    role: string
+    allocation_percentage: number
+    start_date: string | null
+    end_date: string | null
+    joined_at: string
+  }[]
   createdAt: string
   updatedAt: string
 }
@@ -373,22 +386,74 @@ export default function UsersPage() {
               ) : users && users.length > 0 ? (
                 <div className="space-y-4">
                   {users.map(user => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h3 className="font-semibold">{user.name}</h3>
-                        <p className="text-sm text-gray-600">{user.email}</p>
-                        <p className="text-sm text-gray-500">
-                          역할: {user.role} | 
-                          조직: {user.organization?.name || '없음'}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => startEdit(user)}>
-                          수정
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(user.id)}>
-                          삭제
-                        </Button>
+                    <div key={user.id} className="p-4 border rounded-lg">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-3 flex-1">
+                          <Avatar
+                            src={user.avatar_url}
+                            alt={user.name}
+                            fallback={user.name.charAt(0)}
+                            size="lg"
+                          />
+                          <div className="flex-1">
+                            <h3 className="font-semibold">{user.name}</h3>
+                            <p className="text-sm text-gray-600">{user.email}</p>
+                            <p className="text-sm text-gray-500">
+                              역할: {user.role} | 
+                              조직: {user.organization?.name || '없음'}
+                            </p>
+                          
+                          {/* 투입된 프로젝트 정보 */}
+                          {user.projects && user.projects.length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-sm font-medium text-gray-700 mb-2">
+                                투입 프로젝트 ({user.projects.length}개)
+                              </p>
+                              <div className="space-y-2">
+                                {user.projects.slice(0, 3).map(project => (
+                                  <div key={project.id} className="flex items-center gap-2 text-xs">
+                                    <span className={`px-2 py-1 rounded text-white ${
+                                      project.status === 'IN_PROGRESS' ? 'bg-blue-500' :
+                                      project.status === 'COMPLETED' ? 'bg-green-500' :
+                                      project.status === 'ON_HOLD' ? 'bg-yellow-500' :
+                                      project.status === 'PLANNING' ? 'bg-gray-500' :
+                                      'bg-red-500'
+                                    }`}>
+                                      {project.status === 'IN_PROGRESS' ? '진행중' :
+                                       project.status === 'COMPLETED' ? '완료' :
+                                       project.status === 'ON_HOLD' ? '보류' :
+                                       project.status === 'PLANNING' ? '계획' :
+                                       '취소'}
+                                    </span>
+                                    <span className="font-medium">{project.name}</span>
+                                    <span className="text-gray-500">({project.role})</span>
+                                    <span className="text-gray-400">{project.allocation_percentage}%</span>
+                                  </div>
+                                ))}
+                                {user.projects.length > 3 && (
+                                  <p className="text-xs text-gray-500">
+                                    외 {user.projects.length - 3}개 프로젝트
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
+                            {user.projects && user.projects.length === 0 && (
+                              <div className="mt-3">
+                                <p className="text-sm text-gray-400">투입된 프로젝트 없음</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 ml-4">
+                          <Button variant="outline" size="sm" onClick={() => startEdit(user)}>
+                            수정
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDeleteUser(user.id)}>
+                            삭제
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}

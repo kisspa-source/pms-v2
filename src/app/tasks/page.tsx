@@ -23,6 +23,7 @@ export default function TasksPage() {
   const [isStatisticsLoading, setIsStatisticsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'kanban' | 'statistics'>('kanban');
   const [assignees, setAssignees] = useState<Array<{ id: string; name: string; email: string }>>([]);
+  const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskListItem | null>(null);
@@ -33,7 +34,15 @@ export default function TasksPage() {
       setIsLoading(true);
       const params = new URLSearchParams();
       
-      if (filters.project_id) params.append('project_id', filters.project_id);
+      // 프로젝트 ID 처리 (멀티 선택 지원)
+      if (filters.project_id) {
+        if (Array.isArray(filters.project_id)) {
+          filters.project_id.forEach(id => params.append('project_id', id));
+        } else {
+          params.append('project_id', filters.project_id);
+        }
+      }
+      
       if (filters.status) params.append('status', filters.status);
       if (filters.assignee_id) params.append('assignee_id', filters.assignee_id);
       if (filters.priority) params.append('priority', filters.priority);
@@ -56,7 +65,14 @@ export default function TasksPage() {
       setIsStatisticsLoading(true);
       const params = new URLSearchParams();
       
-      if (filters.project_id) params.append('project_id', filters.project_id);
+      // 프로젝트 ID 처리 (멀티 선택 지원)
+      if (filters.project_id) {
+        if (Array.isArray(filters.project_id)) {
+          filters.project_id.forEach(id => params.append('project_id', id));
+        } else {
+          params.append('project_id', filters.project_id);
+        }
+      }
 
       const response = await fetch(`/api/tasks/statistics?${params.toString()}`);
       if (!response.ok) throw new Error('통계를 불러오는데 실패했습니다');
@@ -80,6 +96,27 @@ export default function TasksPage() {
       setAssignees(data);
     } catch (error) {
       console.error('담당자 목록 조회 오류:', error);
+    }
+  };
+
+  // 프로젝트 목록 조회
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('/api/projects?simple=true');
+      if (!response.ok) throw new Error('프로젝트 목록을 불러오는데 실패했습니다');
+      
+      const data = await response.json();
+      
+      // data가 배열인지 확인
+      if (Array.isArray(data)) {
+        setProjects(data.map((project: any) => ({ id: project.id, name: project.name })));
+      } else {
+        console.error('Expected array but got:', typeof data, data);
+        setProjects([]);
+      }
+    } catch (error) {
+      console.error('프로젝트 목록 조회 오류:', error);
+      setProjects([]);
     }
   };
 
@@ -161,6 +198,7 @@ export default function TasksPage() {
     fetchTasks();
     fetchStatistics();
     fetchAssignees();
+    fetchProjects();
   }, [filters]);
 
   // 지연된 작업 필터링
@@ -185,9 +223,32 @@ export default function TasksPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">작업 관리</h1>
-          <p className="text-gray-600 mt-1">
-            프로젝트 작업을 효율적으로 관리하고 추적하세요
-          </p>
+          <div className="mt-1 space-y-1">
+            <p className="text-gray-600">
+              프로젝트 작업을 효율적으로 관리하고 추적하세요
+            </p>
+            {/* 현재 필터된 프로젝트 표시 */}
+            {filters.project_id && projects.length > 0 && (() => {
+              const selectedProjectIds = Array.isArray(filters.project_id) ? filters.project_id : [filters.project_id];
+              const selectedProjects = selectedProjectIds.map(id => projects.find(p => p.id === id)?.name).filter(Boolean);
+              
+              if (selectedProjects.length > 0) {
+                return (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-500">현재 보기:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedProjects.map((projectName, index) => (
+                        <span key={index} className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-sm font-medium">
+                          {projectName}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+          </div>
         </div>
         <div className="flex items-center space-x-2">
           <Button
@@ -226,6 +287,7 @@ export default function TasksPage() {
         filters={filters}
         onFiltersChange={handleFiltersChange}
         assignees={assignees}
+        projects={projects}
         onClearFilters={handleClearFilters}
       />
 

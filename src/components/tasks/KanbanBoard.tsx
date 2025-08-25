@@ -287,9 +287,36 @@ export default function KanbanBoard({
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">칸반 보드</h2>
-          <p className="text-gray-600 mt-1">
-            총 {tasks.length}개의 작업 • {tasks.filter(t => t.status === 'DONE').length}개 완료
-          </p>
+          <div className="mt-1 space-y-1">
+            <p className="text-gray-600">
+              총 {tasks.length}개의 작업 • {tasks.filter(t => t.status === 'DONE').length}개 완료
+            </p>
+            {/* 프로젝트별 작업 수 표시 */}
+            {(() => {
+              const projectCounts = tasks.reduce((acc, task) => {
+                const projectName = task.project.name;
+                acc[projectName] = (acc[projectName] || 0) + 1;
+                return acc;
+              }, {} as Record<string, number>);
+              
+              const projectEntries = Object.entries(projectCounts);
+              if (projectEntries.length > 1) {
+                return (
+                  <div className="flex flex-wrap gap-2">
+                    {projectEntries.map(([projectName, count]) => (
+                      <span
+                        key={projectName}
+                        className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium"
+                      >
+                        {projectName}: {count}개
+                      </span>
+                    ))}
+                  </div>
+                );
+              }
+              return null;
+            })()}
+          </div>
         </div>
         {onTaskCreate && (
           <Button onClick={onTaskCreate} className="bg-blue-600 hover:bg-blue-700">

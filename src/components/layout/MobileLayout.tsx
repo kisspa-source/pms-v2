@@ -16,29 +16,49 @@ import {
   Settings,
   LogOut,
   Bell,
-  Search
+  Search,
+  Building2,
+  Building
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import GlobalSearchModal from '@/components/search/GlobalSearchModal';
+import { useGlobalSearch } from '@/hooks/useGlobalSearch';
+import { usePermissions } from '@/hooks/usePermissions';
+import { ROLE_MENU_ITEMS, UserRole } from '@/lib/auth-guards';
 
 interface MobileLayoutProps {
   children: React.ReactNode;
+}
+
+// 아이콘 매핑
+const iconMap: Record<string, any> = {
+  dashboard: Home,
+  project: FolderOpen,
+  task: CheckSquare,
+  client: Building2,
+  users: Users,
+  organization: Building,
+  report: BarChart3,
+  settings: Settings,
 }
 
 export default function MobileLayout({ children }: MobileLayoutProps) {
   const { data: session, signOut } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const { isSearchOpen, openSearch, closeSearch } = useGlobalSearch();
 
-  const navigation = [
-    { name: '대시보드', href: '/dashboard', icon: Home },
-    { name: '프로젝트', href: '/projects', icon: FolderOpen },
-    { name: '작업', href: '/tasks', icon: CheckSquare },
-    { name: '일정', href: '/schedule', icon: Calendar },
-    { name: '팀원', href: '/users', icon: Users },
-    { name: '보고서', href: '/reports', icon: BarChart3 },
-    { name: '설정', href: '/settings', icon: Settings },
-  ];
+  // 사용자 역할에 따른 메뉴 가져오기
+  const userRole = session?.user?.role as UserRole
+  const userMenuItems = userRole ? ROLE_MENU_ITEMS[userRole] || [] : []
+  
+  // 메뉴 아이템을 모바일 레이아웃 형식으로 변환
+  const navigation = userMenuItems.map(item => ({
+    name: item.label,
+    href: item.href,
+    icon: iconMap[item.icon] || Home,
+  }))
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {
@@ -67,7 +87,12 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
             <Button variant="ghost" size="sm">
               <Bell className="w-5 h-5" />
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={openSearch}
+              title="전역 검색 (Ctrl+K)"
+            >
               <Search className="w-5 h-5" />
             </Button>
           </div>
@@ -154,6 +179,9 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
       <div className="hidden lg:block">
         {children}
       </div>
+      
+      {/* 전역 검색 모달 */}
+      <GlobalSearchModal isOpen={isSearchOpen} onClose={closeSearch} />
     </div>
   );
 } 

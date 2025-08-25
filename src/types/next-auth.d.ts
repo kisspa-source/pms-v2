@@ -9,6 +9,7 @@ declare module "next-auth" {
       name: string
       role: string
       organizationId: string
+      avatar_url?: string
     }
   }
 
@@ -18,6 +19,7 @@ declare module "next-auth" {
     name: string
     role: string
     organizationId: string
+    avatar_url?: string
   }
 }
 
@@ -25,5 +27,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     role: string
     organizationId: string
+    avatar_url?: string
   }
 }

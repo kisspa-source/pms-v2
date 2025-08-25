@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSocket } from '@/hooks/useSocket';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { X, Bell, CheckCircle, AlertCircle, Info } from 'lucide-react';
@@ -16,14 +15,12 @@ interface Notification {
 }
 
 export default function RealTimeNotification() {
-  const { socket } = useSocket();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
-    if (!socket) return;
-
-    const handleNewNotification = (data: any) => {
+    const handleNewNotification = (event: CustomEvent) => {
+      const data = event.detail;
       const newNotification: Notification = {
         id: data.id,
         title: data.title,
@@ -44,12 +41,13 @@ export default function RealTimeNotification() {
       }
     };
 
-    socket.on('notification:new', handleNewNotification);
+    // 커스텀 이벤트 리스너 등록
+    window.addEventListener('notification:new', handleNewNotification as EventListener);
 
     return () => {
-      socket.off('notification:new', handleNewNotification);
+      window.removeEventListener('notification:new', handleNewNotification as EventListener);
     };
-  }, [socket]);
+  }, []);
 
   // 브라우저 알림 권한 요청
   const requestNotificationPermission = () => {

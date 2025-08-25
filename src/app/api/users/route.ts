@@ -58,6 +58,26 @@ export async function GET(request: NextRequest) {
             },
           },
         },
+        project_members: {
+          where: {
+            left_at: null, // 현재 활성 프로젝트만
+          },
+          include: {
+            project: {
+              select: {
+                id: true,
+                name: true,
+                status: true,
+                priority: true,
+                start_date: true,
+                end_date: true,
+              },
+            },
+          },
+          orderBy: {
+            joined_at: 'desc',
+          },
+        },
       },
       orderBy: {
         name: 'asc',
@@ -72,8 +92,20 @@ export async function GET(request: NextRequest) {
       name: user.name,
       email: user.email,
       role: user.role,
+      avatar_url: user.avatar_url,
       organizationId: user.organization_members[0]?.organization.id || null,
       organization: user.organization_members[0]?.organization || null,
+      projects: user.project_members.map(pm => ({
+        id: pm.project.id,
+        name: pm.project.name,
+        status: pm.project.status,
+        priority: pm.project.priority,
+        role: pm.role,
+        allocation_percentage: pm.allocation_percentage,
+        start_date: pm.project.start_date?.toISOString() || null,
+        end_date: pm.project.end_date?.toISOString() || null,
+        joined_at: pm.joined_at.toISOString(),
+      })),
       createdAt: user.created_at.toISOString(),
       updatedAt: user.updated_at.toISOString(),
     }));
@@ -100,6 +132,7 @@ export async function GET(request: NextRequest) {
         name: user.name,
         email: user.email,
         role: user.role,
+        avatar_url: user.avatar_url,
         department: user.organization?.name || null,
       }))
     });

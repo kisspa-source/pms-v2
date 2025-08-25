@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
+import RouteGuard from '@/components/auth/RouteGuard'
+import SocketProvider from '@/components/providers/SocketProvider'
 import { Button } from '@/components/ui/button'
 import { Menu, X, Building2 } from 'lucide-react'
 
@@ -43,7 +45,8 @@ function MainLayout({ children }: MainLayoutProps) {
   }
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+    <SocketProvider>
+      <div className="h-screen flex overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
       {/* 모바일 오버레이 */}
       {isMobile && mobileMenuOpen && (
         <div 
@@ -114,11 +117,14 @@ function MainLayout({ children }: MainLayoutProps) {
         {/* 메인 콘텐츠 */}
         <main className="flex-1 relative overflow-y-auto focus:outline-none bg-gradient-to-br from-gray-50 to-gray-100 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           <div className="min-h-full">
-            {children}
+            <RouteGuard>
+              {children}
+            </RouteGuard>
           </div>
         </main>
       </div>
     </div>
+    </SocketProvider>
   )
 }
 

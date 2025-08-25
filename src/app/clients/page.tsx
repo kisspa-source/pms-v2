@@ -11,6 +11,7 @@ import { Client, ClientStatus } from '@/types/project'
 import { Plus, Search, Filter, Eye, Edit, Trash2, Building, Mail, Phone, Globe, Users, DollarSign } from 'lucide-react'
 import Link from 'next/link'
 import MainLayout from '@/components/layout/MainLayout'
+import PermissionGuard from '@/components/auth/PermissionGuard'
 import { useAlert, useConfirm } from '@/components/ui/alert-dialog'
 
 interface ClientListResponse {
@@ -158,12 +159,14 @@ export default function ClientsPage() {
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1">고객사 관리</h1>
             <p className="text-gray-600 text-sm">전체 {stats?.totalClients || 0}개 고객사를 관리하고 있습니다 ✨</p>
           </div>
-          <Link href="/clients/new">
-            <Button className="flex items-center gap-2 btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large transition-all duration-300 h-10 px-4 w-full sm:w-auto text-sm">
-              <Plus className="w-4 h-4" />
-              새 고객사
-            </Button>
-          </Link>
+          <PermissionGuard permission="canManageClients" fallback={null}>
+            <Link href="/clients/new">
+              <Button className="flex items-center gap-2 btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large transition-all duration-300 h-10 px-4 w-full sm:w-auto text-sm">
+                <Plus className="w-4 h-4" />
+                새 고객사
+              </Button>
+            </Link>
+          </PermissionGuard>
         </div>
 
         {/* 통계 카드 - 매우 컴팩트 버전 */}
@@ -315,19 +318,23 @@ export default function ClientsPage() {
                       <Eye className="w-4 h-4" />
                     </Button>
                   </Link>
-                  <Link href={`/clients/${client.id}/edit`}>
-                    <Button variant="ghost" size="sm" className="hover-scale bg-green-50 hover:bg-green-100 text-green-600">
-                      <Edit className="w-4 h-4" />
+                  <PermissionGuard permission="canManageClients" fallback={null}>
+                    <Link href={`/clients/${client.id}/edit`}>
+                      <Button variant="ghost" size="sm" className="hover-scale bg-green-50 hover:bg-green-100 text-green-600">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                  </PermissionGuard>
+                  <PermissionGuard permission="canManageClients" fallback={null}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteClient(client.id)}
+                      className="hover-scale bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </Button>
-                  </Link>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteClient(client.id)}
-                    className="hover-scale bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  </PermissionGuard>
                 </div>
               </div>
               <div className="flex gap-2 mt-2">
@@ -447,12 +454,14 @@ export default function ClientsPage() {
             </div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">고객사가 없습니다</h3>
             <p className="text-gray-600 mb-6">새 고객사를 등록하여 시작하세요.</p>
-            <Link href="/clients/new">
-              <Button className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large h-10 px-6 text-sm">
-                <Plus className="w-4 h-4 mr-2" />
-                새 고객사 등록
-              </Button>
-            </Link>
+            <PermissionGuard permission="canManageClients" fallback={null}>
+              <Link href="/clients/new">
+                <Button className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large h-10 px-6 text-sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  새 고객사 등록
+                </Button>
+              </Link>
+            </PermissionGuard>
           </div>
         )}
 

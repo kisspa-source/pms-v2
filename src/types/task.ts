@@ -218,7 +218,7 @@ export interface CreateDependencyRequest {
 
 // 작업 필터 옵션
 export interface TaskFilterOptions {
-  project_id?: string;
+  project_id?: string | string[]; // 단일 또는 멀티 선택 지원
   status?: TaskStatus;
   assignee_id?: string;
   priority?: TaskPriority;

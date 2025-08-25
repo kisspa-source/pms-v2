@@ -10,6 +10,7 @@ import ProgressChart from '@/components/reports/ProgressChart';
 import FinancialChart from '@/components/reports/FinancialChart';
 import ResourceChart from '@/components/reports/ResourceChart';
 import CustomerSatisfactionChart from '@/components/reports/CustomerSatisfactionChart';
+import PermissionGuard from '@/components/auth/PermissionGuard';
 import { generatePDFReport, formatCurrency, formatPercentage } from '@/lib/pdf-generator';
 import { format } from 'date-fns';
 import { useAlert } from '@/components/ui/alert-dialog';
@@ -429,11 +430,12 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">보고서 및 분석</h1>
-        <p className="text-gray-600">프로젝트 진행률, 재무 현황, 리소스 활용률을 분석하고 보고서를 생성합니다.</p>
-      </div>
+    <PermissionGuard permission="canViewReports">
+      <div className="container mx-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">보고서 및 분석</h1>
+          <p className="text-gray-600">프로젝트 진행률, 재무 현황, 리소스 활용률을 분석하고 보고서를 생성합니다.</p>
+        </div>
 
       {/* 필터 및 컨트롤 */}
       <Card className="p-6 mb-6">
@@ -493,7 +495,8 @@ export default function ReportsPage() {
         </>
       )}
       
-      <AlertComponent />
-    </div>
+        <AlertComponent />
+      </div>
+    </PermissionGuard>
   );
 } 

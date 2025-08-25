@@ -4,11 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { TaskFilterOptions, TaskStatus, TaskPriority } from '@/types/task';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import MultiSelect from '@/components/ui/multi-select';
 
 interface TaskFilterProps {
   filters: TaskFilterOptions;
   onFiltersChange: (filters: TaskFilterOptions) => void;
   assignees: Array<{ id: string; name: string; email: string }>;
+  projects?: Array<{ id: string; name: string }>;
   phases?: Array<{ id: string; name: string }>;
   onClearFilters: () => void;
 }
@@ -17,6 +19,7 @@ export default function TaskFilter({
   filters,
   onFiltersChange,
   assignees,
+  projects,
   phases,
   onClearFilters,
 }: TaskFilterProps) {
@@ -39,16 +42,21 @@ export default function TaskFilter({
   ];
 
   // 필터 변경 핸들러
-  const handleFilterChange = (key: keyof TaskFilterOptions, value: string | undefined) => {
+  const handleFilterChange = (key: keyof TaskFilterOptions, value: string | string[] | undefined) => {
     const newFilters = { ...filters };
     
-    if (value === undefined || value === '') {
+    if (value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) {
       delete newFilters[key];
     } else {
       newFilters[key] = value as any;
     }
     
     onFiltersChange(newFilters);
+  };
+
+  // 프로젝트 멀티 선택 핸들러
+  const handleProjectsChange = (selectedProjectIds: string[]) => {
+    handleFilterChange('project_id', selectedProjectIds.length > 0 ? selectedProjectIds : undefined);
   };
 
   // 필터 토글 핸들러
@@ -68,14 +76,33 @@ export default function TaskFilter({
     <Card className="p-4 mb-6">
       {/* 필터 헤더 */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <h3 className="font-medium text-gray-900">필터</h3>
-          {activeFiltersCount > 0 && (
-            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
-              {activeFiltersCount}개 활성
-            </span>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <h3 className="font-medium text-gray-900">필터</h3>
+            {activeFiltersCount > 0 && (
+              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                {activeFiltersCount}개 활성
+              </span>
+            )}
+          </div>
+          
+          {/* 프로젝트 멀티 선택 */}
+          {projects && projects.length > 0 && (
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">프로젝트:</span>
+              <div className="min-w-[200px]">
+                <MultiSelect
+                  options={projects}
+                  selectedIds={Array.isArray(filters.project_id) ? filters.project_id : filters.project_id ? [filters.project_id] : []}
+                  onChange={handleProjectsChange}
+                  placeholder="전체 프로젝트"
+                  className="text-sm"
+                />
+              </div>
+            </div>
           )}
         </div>
+        
         <div className="flex items-center space-x-2">
           {activeFiltersCount > 0 && (
             <Button
@@ -93,7 +120,7 @@ export default function TaskFilter({
             onClick={() => setIsExpanded(!isExpanded)}
             className="text-xs"
           >
-            {isExpanded ? '접기' : '펼치기'}
+            {isExpanded ? '접기' : '상세 필터'}
           </Button>
         </div>
       </div>
@@ -101,6 +128,38 @@ export default function TaskFilter({
       {/* 필터 내용 */}
       {isExpanded && (
         <div className="space-y-4">
+          {/* 프로젝트 필터 - 가장 위에 배치 */}
+          {projects && projects.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">프로젝트</h4>
+              <div className="flex flex-wrap gap-2">
+                {projects.map((project) => {
+                  const selectedProjectIds = Array.isArray(filters.project_id) ? filters.project_id : filters.project_id ? [filters.project_id] : [];
+                  const isSelected = selectedProjectIds.includes(project.id);
+                  
+                  return (
+                    <button
+                      key={project.id}
+                      onClick={() => {
+                        const newSelectedIds = isSelected
+                          ? selectedProjectIds.filter(id => id !== project.id)
+                          : [...selectedProjectIds, project.id];
+                        handleProjectsChange(newSelectedIds);
+                      }}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        isSelected
+                          ? 'bg-purple-100 text-purple-700 ring-2 ring-purple-500'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {project.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* 상태 필터 */}
           <div>
             <h4 className="text-sm font-medium text-gray-700 mb-2">상태</h4>
@@ -191,6 +250,25 @@ export default function TaskFilter({
       {activeFiltersCount > 0 && (
         <div className="mt-4 pt-4 border-t border-gray-200">
           <div className="flex flex-wrap gap-2">
+            {filters.project_id && projects && (() => {
+              const selectedProjectIds = Array.isArray(filters.project_id) ? filters.project_id : [filters.project_id];
+              const selectedProjects = selectedProjectIds.map(id => projects.find(p => p.id === id)?.name).filter(Boolean);
+              
+              if (selectedProjects.length === 1) {
+                return (
+                  <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs">
+                    프로젝트: {selectedProjects[0]}
+                  </span>
+                );
+              } else if (selectedProjects.length > 1) {
+                return (
+                  <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs">
+                    프로젝트: {selectedProjects[0]} 외 {selectedProjects.length - 1}개
+                  </span>
+                );
+              }
+              return null;
+            })()}
             {filters.status && (
               <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs">
                 상태: {statusOptions.find(s => s.value === filters.status)?.label}

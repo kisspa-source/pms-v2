@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Avatar } from '@/components/ui/avatar'
 import { ArrowLeft, Plus, Trash2, Edit, Users, Target, BarChart3, Clock, X, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import MainLayout from '@/components/layout/MainLayout'
@@ -17,6 +18,7 @@ interface User {
   email: string
   role: string
   department?: string
+  avatar_url?: string
 }
 
 interface ProjectMember {
@@ -145,23 +147,24 @@ export default function ProjectMembersPage() {
     showConfirm(
       `${memberName}님을 프로젝트에서 제거하시겠습니까?`,
       async () => {
+        try {
+          const response = await fetch(`/api/projects/${projectId}/members/${memberId}`, {
+            method: 'DELETE',
+          })
 
-    try {
-      const response = await fetch(`/api/projects/${projectId}/members/${memberId}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
-        toast.success('팀원이 제거되었습니다.')
-        fetchProjectMembers()
-      } else {
-        const error = await response.json()
-        toast.error(error.error || '팀원 제거에 실패했습니다.')
+          if (response.ok) {
+            toast.success('팀원이 제거되었습니다.')
+            fetchProjectMembers()
+          } else {
+            const error = await response.json()
+            toast.error(error.error || '팀원 제거에 실패했습니다.')
+          }
+        } catch (error) {
+          console.error('팀원 제거 오류:', error)
+          toast.error('팀원 제거에 실패했습니다.')
+        }
       }
-    } catch (error) {
-      console.error('팀원 제거 오류:', error)
-      toast.error('팀원 제거에 실패했습니다.')
-    }
+    )
   }
 
   const getRoleDisplayName = (role: string) => {
@@ -453,19 +456,13 @@ export default function ProjectMembersPage() {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-4">
                         {/* 아바타 */}
-                        <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-medium">
-                          {member.user.avatar_url ? (
-                            <img 
-                              src={member.user.avatar_url} 
-                              alt={member.user.name} 
-                              className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm" 
-                            />
-                          ) : (
-                            <span className="text-lg font-bold text-white">
-                              {member.user.name.charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                        </div>
+                        <Avatar
+                          src={member.user.avatar_url}
+                          alt={member.user.name}
+                          fallback={member.user.name.charAt(0).toUpperCase()}
+                          size="xl"
+                          className="shadow-medium border-2 border-white"
+                        />
 
                         {/* 기본 정보 */}
                         <div className="flex-1">

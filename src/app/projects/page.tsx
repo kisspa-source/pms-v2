@@ -608,12 +608,14 @@ export default function ProjectsPage() {
           </div>
           <h3 className="text-xl font-bold text-gray-800 mb-2">프로젝트가 없습니다</h3>
           <p className="text-gray-600 mb-6">새 프로젝트를 생성하여 시작하세요.</p>
-          <Link href="/projects/new">
-            <Button className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large h-10 px-6 text-sm">
-              <Plus className="w-4 h-4 mr-2" />
-              새 프로젝트 생성
-            </Button>
-          </Link>
+          <PermissionGuard permission="canManageProjects" fallback={null}>
+            <Link href="/projects/new">
+              <Button className="btn-modern bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-medium hover:shadow-large h-10 px-6 text-sm">
+                <Plus className="w-4 h-4 mr-2" />
+                새 프로젝트 생성
+              </Button>
+            </Link>
+          </PermissionGuard>
         </div>
       )}
       </div>

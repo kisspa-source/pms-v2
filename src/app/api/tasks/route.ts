@@ -11,16 +11,24 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const projectId = searchParams.get('project_id');
+    const projectIds = searchParams.getAll('project_id'); // 모든 project_id 값 가져오기
     const status = searchParams.get('status');
     const assigneeId = searchParams.get('assignee_id');
     const priority = searchParams.get('priority');
 
     const where: any = {};
 
-    if (projectId) {
-      where.project_id = projectId;
+    if (projectIds.length > 0) {
+      if (projectIds.length === 1) {
+        where.project_id = projectIds[0];
+      } else {
+        where.project_id = {
+          in: projectIds
+        };
+      }
     }
+
+
 
     if (status) {
       where.status = status;
